@@ -4,4 +4,8 @@
 
 # Progress
 
--   First generate annotated umap with most cluster identified (2025/5/21) ![control](data/processed/mice_control/mice_control_annotated.png) ![treatment](data/processed/mice_treatment/mice_treatment_annotated.png)
+-   First generate annotated umap with most cluster identified (2025/5/21)
+Control:
+![control](data/processed/mice_control/mice_control_annotated.png) 
+Treatment:
+![treatment](data/processed/mice_treatment/mice_treatment_annotated.png)
