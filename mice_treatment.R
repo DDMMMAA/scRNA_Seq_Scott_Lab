@@ -130,7 +130,7 @@ FeaturePlot(mice_treatment, features = c("Foxj1"))
 for (i in 0:14) {
   cluster_name <- paste("Cluster", i, sep = "")
   result_name <- paste("result_cluster", i, sep = "")
-  assign(cluster_name, head(row.names(subset(mice_treatment.markers, cluster == i)), 30))
+  assign(cluster_name, head(subset(mice_treatment.markers, cluster == i)[["gene"]], 30))
   buf <- get(cluster_name)
   assign(result_name, enrichGO(gene = buf, keyType = "SYMBOL", 
                                OrgDb = "org.Mm.eg.db", ont = "BP"))
