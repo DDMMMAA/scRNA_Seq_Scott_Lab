@@ -121,9 +121,6 @@ FeaturePlot(mice_treatment, features = c("Ptprc", "Cx3cr1", "Tmem9", "Aif1"))
 # Epidermal marker
 FeaturePlot(mice_treatment, features = c("Foxj1"))
 
-# Neuro epithelial => ECM
-# tissue originC
-
 ##################################
 # Gene ontology (Among Top 30 gene of each cluster)
 # Run GO for each cluster
