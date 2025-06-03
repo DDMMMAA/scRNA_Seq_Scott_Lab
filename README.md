@@ -10,3 +10,7 @@
     ![control](data/processed/mice_control/mice_control_annotated.png)\
     Treatment:\
     ![treatment](data/processed/mice_treatment/mice_treatment_annotated.png)
+
+2. Generate integrated umap, cell identity not yet annotated (2025/6/3).\
+   Integrated:\
+   ![integrated](data/processed/mice_integrated/mice_merged_umap.png)\
