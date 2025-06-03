@@ -145,3 +145,7 @@ new.cluster.ids <- c("Immune_1*", "1", "2", "Oligogendrocyte", "Neuron", "Neuro 
 names(new.cluster.ids) <- levels(mice_control)
 mice_control <- RenameIdents(mice_control, new.cluster.ids)
 DimPlot(mice_control, reduction = "umap", label = TRUE, pt.size = 0.5)
+
+################################
+# Save result seurat object
+saveRDS(mice_control, file = "data/processed/seurat_object/seurat_mice_control.RData")
