@@ -33,7 +33,7 @@ mice_merged <- FindNeighbors(mice_merged,
                              dims = 1:15, 
                              reduction = "pca")
 mice_merged <- FindClusters(mice_merged, 
-                            resolution = 0.5, 
+                            resolution = 0.95, 
                             cluster.name = "unintegrated_clusters")
 mice_merged <- RunUMAP(mice_merged, 
                        dims = 1:15, 
@@ -41,7 +41,7 @@ mice_merged <- RunUMAP(mice_merged,
                        reduction.name = "umap.unintegrated")
 DimPlot(mice_merged, 
         reduction = "umap.unintegrated", 
-        group.by = c("orig.ident", "seurat_clusters"), 
+        group.by = c("seurat_clusters"), 
         label = TRUE)
 ########################
 # Perform integration
@@ -58,7 +58,7 @@ mice_merged <- FindNeighbors(mice_merged,
                              reduction = "integrated.cca", 
                              dims = 1:15)
 mice_merged <- FindClusters(mice_merged, 
-                            resolution = 0.5)
+                            resolution = 1.05)
 mice_merged <- RunUMAP(mice_merged, dims = 1:15, reduction = "integrated.cca")
 DimPlot(mice_merged, 
         reduction = "umap", 
@@ -72,30 +72,50 @@ mice_merged.markers %>% group_by(cluster) %>% dplyr::filter(avg_log2FC > 1)
 
 # test known marker gene
 # Astrocyte marker
-FeaturePlot(mice_merged, features = c("S100b", "Gfap", "Aldh1l1", 
-                                         "Sox9", "Gja1", "Hepacam"), reduction = "umap")
+FeaturePlot(mice_merged, 
+            features = c("S100b", "Gfap", "Aldh1l1", "Sox9", "Gja1", "Hepacam"), 
+            reduction = "umap", 
+            split.by = "orig.ident")
 
 # Oligodendrocyte marker
-FeaturePlot(mice_merged, features = c("Sox10", "Olig1", "Olig2", "Mbp"), reduction = "umap")
+FeaturePlot(mice_merged, 
+            features = c("Sox10", "Olig1", "Olig2", "Mbp"), 
+            reduction = "umap", 
+            split.by = "orig.ident")
 
 # Neuron stem marker
-FeaturePlot(mice_merged, features = c("Sox2", "Vim", "Nes"), reduction = "umap")
+FeaturePlot(mice_merged, 
+            features = c("Sox2", "Vim", "Nes"), 
+            reduction = "umap", 
+            split.by = "orig.ident")
 
 # Neuron marker
-FeaturePlot(mice_merged, features = c("Neurod2", "Neurod1", "Dcx", "Sp8", 
-                                         "Sp9", "Grm8", "Gabra1"), reduction = "umap")
+FeaturePlot(mice_merged, 
+            features = c("Neurod2", "Neurod1", "Dcx", 
+                         "Sp8", "Sp9", "Grm8", "Gabra1"), 
+            reduction = "umap", 
+            split.by = "orig.ident")
 
 # Oligo progenitor marker
-FeaturePlot(mice_merged, features = c("Cspg4", "Pdgfra"), reduction = "umap")
+FeaturePlot(mice_merged, 
+            features = c("Cspg4", "Pdgfra"), 
+            reduction = "umap", 
+            split.by = "orig.ident")
 
 # Micro glia marker
-FeaturePlot(mice_merged, features = c("Ptprc", "Cx3cr1", "Tmem9", "Aif1"), reduction = "umap")
+FeaturePlot(mice_merged, 
+            features = c("Ptprc", "Cx3cr1", "Tmem9", "Aif1"), 
+            reduction = "umap", 
+            split.by = "orig.ident")
 
 # Epidermal marker
-FeaturePlot(mice_merged, features = c("Foxj1"), reduction = "umap")
+FeaturePlot(mice_merged, 
+            features = c("Foxj1"), 
+            reduction = "umap", 
+            split.by = "orig.ident")
 
 # GO analysis
-for (i in 0:15) {
+for (i in 0:23) {
   cluster_name <- paste("Cluster", i, sep = "")
   result_name <- paste("result_cluster", i, sep = "")
   assign(cluster_name, head(subset(mice_merged.markers, cluster == i)[["gene"]], 30))
@@ -104,3 +124,15 @@ for (i in 0:15) {
                                OrgDb = "org.Mm.eg.db", ont = "BP"))
   print(i)
 }
+
+#new.cluster.ids <- c("Immune_1*", "1", "Mitochondrial", "Neuron", 
+#                     "Neurogenesis*", "Cell Cycle*", "Myeloid", "Cell cycle*", 
+#                     "Oligo/OPC", "Asterocyte", "Immune_2*", "11", "T-cell*", 
+#                     "13", "Blood-brain barrier*", "Cell movement*")
+#names(new.cluster.ids) <- levels(mice_merged)
+#mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
+DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+
+################################
+#Identify conserved cell type marker across control & treatment group
+t_cell.markers <- FindConservedMarkers(mice_merged, ident.1 = "T-cell*", grouping.var = "orig.ident")
