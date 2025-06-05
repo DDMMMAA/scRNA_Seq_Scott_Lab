@@ -8,6 +8,7 @@ library(cowplot)
 library(dplyr)
 library(patchwork)
 library(clusterProfiler)
+library(clustree)
 
 #######################
 # Read control & treatment Seurat obj result from previous separate analysis
@@ -57,6 +58,10 @@ mice_merged[["RNA"]] <- JoinLayers(mice_merged[["RNA"]])
 mice_merged <- FindNeighbors(mice_merged, 
                              reduction = "integrated.cca", 
                              dims = 1:15)
+
+# Clustering under different resolution and use clustree package
+# to determine an optimal resolution
+
 mice_merged <- FindClusters(mice_merged, 
                             resolution = 1.05)
 mice_merged <- RunUMAP(mice_merged, dims = 1:15, reduction = "integrated.cca")
@@ -123,7 +128,11 @@ for (i in 0:23) {
   assign(result_name, enrichGO(gene = buf, keyType = "SYMBOL", 
                                OrgDb = "org.Mm.eg.db", ont = "BP"))
   print(i)
+  rm(buf)
+  rm(cluster_name)
+  rm(result_name)
 }
+rm(i)
 
 #new.cluster.ids <- c("Immune_1*", "1", "Mitochondrial", "Neuron", 
 #                     "Neurogenesis*", "Cell Cycle*", "Myeloid", "Cell cycle*", 

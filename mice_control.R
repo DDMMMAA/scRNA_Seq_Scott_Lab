@@ -136,7 +136,11 @@ for (i in 0:11) {
   assign(result_name, enrichGO(gene = buf, keyType = "SYMBOL", 
                         OrgDb = "org.Mm.eg.db", ont = "BP"))
   print(i)
+  rm(buf)
+  rm(cluster_name)
+  rm(result_name)
 }
+rm(i)
 
 #################################
 # Assign cell identity
