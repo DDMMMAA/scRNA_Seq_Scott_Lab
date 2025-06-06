@@ -4,6 +4,10 @@ library(patchwork)
 library(clusterProfiler)
 
 #####################################
+# include Helper function
+source("helper_function.R")
+
+#####################################
 #Global Variable
 target_sample_directory <- "data/raw/mice/Control-10K_RSEC_MolsPerCell_MEX 1/"
 
@@ -77,6 +81,12 @@ ElbowPlot(mice_control)
 ###################################
 #Cluster the cells
 mice_control <- FindNeighbors(mice_control, dims = 1:10)
+
+# Determine optimal resolution
+mice_control <- FindClusters.range(mice_control)
+clustree(mice_control)
+
+# Set clustering result under resolution = 0.5
 mice_control <- FindClusters(mice_control, resolution = 0.5)
 head(Idents(mice_control), 5)
 
@@ -128,19 +138,7 @@ FeaturePlot(mice_control, features = c("Foxj1"))
 ##################################
 # Gene ontology (Among Top 30 gene of each cluster)
 # Run GO for each cluster
-for (i in 0:11) {
-  cluster_name <- paste("Cluster", i, sep = "")
-  result_name <- paste("result_cluster", i, sep = "")
-  assign(cluster_name, head(subset(mice_control.markers, cluster == i)[["gene"]], 30))
-  buf <- get(cluster_name)
-  assign(result_name, enrichGO(gene = buf, keyType = "SYMBOL", 
-                        OrgDb = "org.Mm.eg.db", ont = "BP"))
-  print(i)
-  rm(buf)
-  rm(cluster_name)
-  rm(result_name)
-}
-rm(i)
+GOresult <- enrichGO.clusters(mice_control.markers, 30, "BP")
 
 #################################
 # Assign cell identity
@@ -152,4 +150,4 @@ DimPlot(mice_control, reduction = "umap", label = TRUE, pt.size = 0.5)
 
 ################################
 # Save result seurat object
-saveRDS(mice_control, file = "data/processed/seurat_object/seurat_mice_control.RData")
+saveRDS(mice_control, file = "data/processed/mice_control/seuratObj_mice_control.RData")

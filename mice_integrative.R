@@ -11,9 +11,13 @@ library(clusterProfiler)
 library(clustree)
 
 #######################
+# include Helper function
+source("helper_function.R")
+
+#######################
 # Read control & treatment Seurat obj result from previous separate analysis
-mice_control <- readRDS(file = "data/processed/seurat_object/seurat_mice_control.RData")
-mice_treatment <- readRDS(file = "data/processed/seurat_object/seurat_mice_treatment.RData")
+mice_control <- readRDS(file = "data/processed/mice_control/seuratObj_mice_control.RData")
+mice_treatment <- readRDS(file = "data/processed/mice_treatment/seuratObj_mice_treatment.RData")
 
 # Merge two Seurat object
 mice_merged <- merge(x = mice_control, 
@@ -34,7 +38,7 @@ mice_merged <- FindNeighbors(mice_merged,
                              dims = 1:15, 
                              reduction = "pca")
 mice_merged <- FindClusters(mice_merged, 
-                            resolution = 0.95, 
+                            resolution = 0.5, 
                             cluster.name = "unintegrated_clusters")
 mice_merged <- RunUMAP(mice_merged, 
                        dims = 1:15, 
@@ -59,11 +63,12 @@ mice_merged <- FindNeighbors(mice_merged,
                              reduction = "integrated.cca", 
                              dims = 1:15)
 
-# Clustering under different resolution and use clustree package
-# to determine an optimal resolution
+# Determine the optimal resolution
+mice_merged <- FindClusters.range(mice_merged, start = 0, end = 1.5, margin = 0.1)
+clustree(mice_merged)
 
-mice_merged <- FindClusters(mice_merged, 
-                            resolution = 1.05)
+# Set clustering result under resolution = 0.5
+mice_merged <- FindClusters(mice_merged, resolution = 0.5)
 mice_merged <- RunUMAP(mice_merged, dims = 1:15, reduction = "integrated.cca")
 DimPlot(mice_merged, 
         reduction = "umap", 
@@ -120,19 +125,7 @@ FeaturePlot(mice_merged,
             split.by = "orig.ident")
 
 # GO analysis
-for (i in 0:23) {
-  cluster_name <- paste("Cluster", i, sep = "")
-  result_name <- paste("result_cluster", i, sep = "")
-  assign(cluster_name, head(subset(mice_merged.markers, cluster == i)[["gene"]], 30))
-  buf <- get(cluster_name)
-  assign(result_name, enrichGO(gene = buf, keyType = "SYMBOL", 
-                               OrgDb = "org.Mm.eg.db", ont = "BP"))
-  print(i)
-  rm(buf)
-  rm(cluster_name)
-  rm(result_name)
-}
-rm(i)
+GOresult <- enrichGO.clusters(mice_merged.markers, 30, "BP")
 
 #new.cluster.ids <- c("Immune_1*", "1", "Mitochondrial", "Neuron", 
 #                     "Neurogenesis*", "Cell Cycle*", "Myeloid", "Cell cycle*", 
