@@ -12,7 +12,7 @@ library(clustree)
 
 #######################
 # include Helper function
-source("helper_function.R")
+source("src/helper_function.R")
 
 #######################
 # Read control & treatment Seurat obj result from previous separate analysis

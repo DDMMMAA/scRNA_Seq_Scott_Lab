@@ -6,7 +6,7 @@ library(clustree)
 
 #####################################
 # include Helper function
-source("helper_function.R")
+source("src/helper_function.R")
 
 #####################################
 #Global Variable
