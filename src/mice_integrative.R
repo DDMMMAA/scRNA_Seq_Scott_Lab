@@ -84,55 +84,48 @@ mice_merged.markers %>% group_by(cluster) %>% dplyr::filter(avg_log2FC > 1)
 # Astrocyte marker
 FeaturePlot(mice_merged, 
             features = c("S100b", "Gfap", "Aldh1l1", "Sox9", "Gja1", "Hepacam"), 
-            reduction = "umap", 
-            split.by = "orig.ident")
+            reduction = "umap")
 
 # Oligodendrocyte marker
 FeaturePlot(mice_merged, 
             features = c("Sox10", "Olig1", "Olig2", "Mbp"), 
-            reduction = "umap", 
-            split.by = "orig.ident")
+            reduction = "umap")
 
 # Neuron stem marker
 FeaturePlot(mice_merged, 
             features = c("Sox2", "Vim", "Nes"), 
-            reduction = "umap", 
-            split.by = "orig.ident")
+            reduction = "umap")
 
 # Neuron marker
 FeaturePlot(mice_merged, 
             features = c("Neurod2", "Neurod1", "Dcx", 
                          "Sp8", "Sp9", "Grm8", "Gabra1"), 
-            reduction = "umap", 
-            split.by = "orig.ident")
+            reduction = "umap")
 
 # Oligo progenitor marker
 FeaturePlot(mice_merged, 
             features = c("Cspg4", "Pdgfra"), 
-            reduction = "umap", 
-            split.by = "orig.ident")
+            reduction = "umap")
 
 # Micro glia marker
 FeaturePlot(mice_merged, 
             features = c("Ptprc", "Cx3cr1", "Tmem9", "Aif1"), 
-            reduction = "umap", 
-            split.by = "orig.ident")
+            reduction = "umap")
 
 # Epidermal marker
 FeaturePlot(mice_merged, 
             features = c("Foxj1"), 
-            reduction = "umap", 
-            split.by = "orig.ident")
+            reduction = "umap")
 
 # GO analysis
 GOresult <- enrichGO.clusters(mice_merged.markers, 30, "BP")
 
-#new.cluster.ids <- c("Immune_1*", "1", "Mitochondrial", "Neuron", 
-#                     "Neurogenesis*", "Cell Cycle*", "Myeloid", "Cell cycle*", 
-#                     "Oligo/OPC", "Asterocyte", "Immune_2*", "11", "T-cell*", 
-#                     "13", "Blood-brain barrier*", "Cell movement*")
-#names(new.cluster.ids) <- levels(mice_merged)
-#mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
+new.cluster.ids <- c("Proliferating_Microglia*", "1", "Mitochondrial", "Neuron", 
+                     "Neuro Stem", "Cell_cycle_1*", "Myeloid", "Cell_cycle_2*", 
+                     "Oligo/OPC", "Asterocyte", "Mature_Microglia*", "11", "T-cell*", 
+                     "13", "Blood-brain_barrier*", "Cell_movement*")
+names(new.cluster.ids) <- levels(mice_merged)
+mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
 DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
 
 ################################
