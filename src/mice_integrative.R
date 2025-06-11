@@ -9,6 +9,7 @@ library(dplyr)
 library(patchwork)
 library(clusterProfiler)
 library(clustree)
+library(data.table)
 
 #######################
 # include Helper function
@@ -127,6 +128,10 @@ new.cluster.ids <- c("Proliferating_Microglia*", "1", "Mitochondrial", "Neuron",
 names(new.cluster.ids) <- levels(mice_merged)
 mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
 DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+################################
+# Export mice_merged seurat obj into CSV file
+data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
+fwrite(x = data_to_write_out, row.names = TRUE, file = "outfile.csv")
 
 ################################
 #Identify conserved cell type marker across control & treatment group
