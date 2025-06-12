@@ -10,6 +10,8 @@ library(patchwork)
 library(clusterProfiler)
 library(clustree)
 library(data.table)
+library(clustifyr)
+library(clustifyrdatahub)
 
 #######################
 # include Helper function
@@ -33,7 +35,7 @@ mice_merged <- ScaleData(mice_merged)
 mice_merged <- RunPCA(mice_merged)
 
 # Determine the dimantionality
-ElbowPlot(mice_control)
+ElbowPlot(mice_merged)
 
 mice_merged <- FindNeighbors(mice_merged, 
                              dims = 1:15, 
@@ -128,10 +130,33 @@ new.cluster.ids <- c("Proliferating_Microglia*", "1", "Mitochondrial", "Neuron",
 names(new.cluster.ids) <- levels(mice_merged)
 mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
 DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+
+# Automated Cell annotation by clustifyr
+# using clustering result at res = 0.5 and Mouse Cell Atlas as reference
+cor_to_call(clustify(
+  input = mice_merged,
+  metadata = mice_merged@meta.data$RNA_snn_res.0.5,
+  ref_mat = ref_MCA()
+))
+
+# Rename cluster based on result above
+new.cluster.ids <- c("Macrophage_Klf2_high_1", "Macrophage_Klf2_high_2", 
+                     "Macrophage_Klf2_high_3", "Schwann_cell_1", 
+                     "Granule_neurons", "Neuron_Kpna2_high", "Schwann_cell_2", 
+                     "Proliferating_thymocyte", 
+                     "Myelinating_oligodendrocyte", 
+                     "Astroglial_cell(Bergman glia)", 
+                     "Macrophage_Klf2_high_4", "Astrocyte_Mfe_high", 
+                     "Monocyte(Spleen)", 
+                     "Schwann_cell_3", "Ductal_cell(Pancreas)", 
+                     "Hypothalamic_ependymal cell")
+names(new.cluster.ids) <- levels(mice_merged)
+mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
+DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
 ################################
 # Export mice_merged seurat obj into CSV file
 data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
-fwrite(x = data_to_write_out, row.names = TRUE, file = "outfile.csv")
+fwrite(x = data_to_write_out, row.names = TRUE, file = "mice_merged.csv")
 
 ################################
 #Identify conserved cell type marker across control & treatment group
