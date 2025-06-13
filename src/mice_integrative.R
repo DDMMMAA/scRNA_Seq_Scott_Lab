@@ -12,6 +12,8 @@ library(clustree)
 library(data.table)
 library(clustifyr)
 library(clustifyrdatahub)
+library(SingleR)
+library(celldex)
 
 #######################
 # include Helper function
@@ -153,6 +155,14 @@ new.cluster.ids <- c("Macrophage_Klf2_high_1", "Macrophage_Klf2_high_2",
 names(new.cluster.ids) <- levels(mice_merged)
 mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
 DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+
+# Automated Cell annotation by SingleR
+ref_mice <- fetchReference("mouse_rnaseq", "2024-02-26")
+SingleR_result <- SingleR(as.data.frame(as.matrix(mice_merged[["RNA"]]$data)), 
+                          ref_mice, ref_mice$label.main)
+mice_merged$SingleR.labels <- SingleR_result$labels
+DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5, group.by = "SingleR.labels")
+
 ################################
 # Export mice_merged seurat obj into CSV file
 data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
