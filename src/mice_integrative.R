@@ -125,9 +125,11 @@ FeaturePlot(mice_merged,
 # GO analysis
 GOresult <- enrichGO.clusters(mice_merged.markers, 30, "BP")
 
+# Manual Annotation
 new.cluster.ids <- c("Proliferating_Microglia*", "1", "Mitochondrial", "Neuron", 
                      "Neuro Stem", "Cell_cycle_1*", "Myeloid", "Cell_cycle_2*", 
-                     "Oligo/OPC", "Asterocyte", "Mature_Microglia*", "11", "T-cell*", 
+                     "Oligo/OPC", "Asterocyte", "Mature_Microglia*", "11", 
+                     "T-cell*", 
                      "13", "Blood-brain_barrier*", "Cell_movement*")
 names(new.cluster.ids) <- levels(mice_merged)
 mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
@@ -161,7 +163,8 @@ ref_mice <- fetchReference("mouse_rnaseq", "2024-02-26")
 SingleR_result <- SingleR(as.data.frame(as.matrix(mice_merged[["RNA"]]$data)), 
                           ref_mice, ref_mice$label.main)
 mice_merged$SingleR.labels <- SingleR_result$labels
-DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5, group.by = "SingleR.labels")
+DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5, 
+        group.by = "SingleR.labels")
 
 ################################
 # Export mice_merged seurat obj into CSV file
@@ -169,5 +172,37 @@ data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
 fwrite(x = data_to_write_out, row.names = TRUE, file = "mice_merged.csv")
 
 ################################
-#Identify conserved cell type marker across control & treatment group
-t_cell.markers <- FindConservedMarkers(mice_merged, ident.1 = "T-cell*", grouping.var = "orig.ident")
+# Identify conserved cell type marker across control & treatment group
+# This step meant to help manual annotation
+Idents(mice_merged) <- "seurat_clusters"
+T_cell.markers <- FindConservedMarkers(mice_merged, ident.1 = "12", 
+                                       grouping.var = "orig.ident")
+mice_merged$seurat_clusters <- factor(mice_merged$seurat_clusters, 
+                                      levels = levels(mice_merged))
+
+markers.to.plot <- c("S100a11")
+DotPlot(mice_merged, features = markers.to.plot, cols = c("blue", "red"), 
+        dot.scale = 8, split.by = "orig.ident") + RotatedAxis()
+
+################################
+# Identify DEG across conditions
+DEGs_result <- DEGs_across_condition(mice_merged)
+
+# DEG visulization
+FeaturePlot(mice_merged, features = c("Cp", "Msh5"), split.by = "orig.ident", 
+            max.cutoff = 3, cols = c("grey", "red"), reduction = "umap")
+plots <- VlnPlot(mice_merged, features = c("Cp", "Msh5"), 
+                 split.by = "orig.ident", group.by = "seurat_clusters",
+                 pt.size = 0, combine = FALSE)
+wrap_plots(plots = plots, ncol = 1)
+
+# "Pesudobulk visulization"
+aggregate_mice_merged <- AggregateExpression(mice_merged, 
+                                             group.by = c("seurat_clusters", "orig.ident"), 
+                                             return.seurat = TRUE)
+genes.to.label = c("A1cf")
+
+p1 <- CellScatter(aggregate_mice_merged, "g15_mice-treatment", "g15_mice-control", 
+                  highlight = genes.to.label)
+p2 <- LabelPoints(plot = p1, points = genes.to.label, repel = F)
+p2

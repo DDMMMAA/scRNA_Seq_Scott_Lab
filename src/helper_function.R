@@ -66,3 +66,31 @@ enrichGO.clusters <- function(obj, num_top_gene = 30, ont) {
     return(result)
   }
 }
+
+##################################
+# wrapper for DEG of cluster across conditions
+# Perform DEF of all clusters across conditions
+# Return a vector of data.frame that store DEGs
+# Argument:
+#   obj: A seurat object
+DEGs_across_condition <- function(obj) {
+  if(any(class(obj) != "Seurat")) {
+    message("# Argument:")
+    message("#   obj: a Seurat object")
+  } else {
+    obj$celltype.condition <- paste(obj$seurat_clusters, 
+                                            obj$orig.ident, sep = "_")
+    Idents(obj) <- "celltype.condition"
+    result <- list()
+    for (i in levels(obj$seurat_clusters)) {
+      cluster_name <- paste("Cluster", i, sep = "")
+      result_name <- paste("DEG_result_cluster", i, sep = "")
+      enrich_res <- FindMarkers(obj, 
+                                ident.1 = paste(i, "_mice_control", sep = ""), 
+                                ident.2 = paste(i, "_mice_treatment", sep = ""))
+      result[[result_name]] <- enrich_res
+      message("Complete cluster: ", i)
+    }
+    return(result)
+  }
+}
