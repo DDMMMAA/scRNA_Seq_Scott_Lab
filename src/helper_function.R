@@ -18,9 +18,9 @@ FindClusters.range <- function(obj, start = 0, end = 1.5, margin = 0.1) {
       (margin <= 0)) {
     message("# Argument:")
     message("#   obj: a Seurat object")
-    message("#   start: the start of range of resolution (>= 0, default = 0)")
-    message("#   end: the end of range of resolution (>= start, default = 1.5)")
-    message("#   margin: the margin of range (positive rational number, default = 0.1)")
+    message("#   start: the start of range of resolution (>= 0, default == 0)")
+    message("#   end: the end of range of resolution (>= start, default == 1.5)")
+    message("#   margin: the margin of range (positive rational number, default == 0.1)")
   } else {
     range <- seq(start, end, margin)
     # loop over range
@@ -46,7 +46,7 @@ enrichGO.clusters <- function(obj, num_top_gene = 30, ont) {
       (!ont %in% c("BP", "MF", "CC", "ALL"))) {
     message("# Argument:")
     message("#   obj: a Seurat object")
-    message("#   num_top_gene: number of top differentially expressed gene used for GO (>0, default = 30)")
+    message("#   num_top_gene: number of top differentially expressed gene used for GO (>0, default == 30)")
     message("#   ont: One of 'BP', 'MF', and 'CC' subontologies, or 'ALL' for all three")
   } else {
     result <- list()
@@ -68,7 +68,7 @@ enrichGO.clusters <- function(obj, num_top_gene = 30, ont) {
 }
 
 ##################################
-# wrapper for DEG of cluster across conditions
+# wrapper for DEG of clusters across conditions
 # Perform DEF of all clusters across conditions
 # Return a vector of data.frame that store DEGs
 # Argument:
@@ -92,5 +92,38 @@ DEGs_across_condition <- function(obj) {
       message("Complete cluster: ", i)
     }
     return(result)
+  }
+}
+
+###################################
+# Wrapper to extract top DEGs
+# rank top DEGs based on either P-val or avg_log2FC
+# Return a vector of gene symbol
+# Argument:
+#   obj: a list of dataframe, each dataframe contain gene symbol as row names, 
+#        p-val & avg_log2FC as column
+#   cluster_ident: the numeric identity of a cluster (cluster_ident < length(obj))
+#   num_gene: the number of top DEGs to extract (default == 5)
+#   col_name: either "p_val" or "avg_log2FC" ("p_val" || "avg_log2FC")
+#   decreasing: decreasing or not (T/F, default == F)
+extract_top_DEGs <- function(obj, cluster_ident, num_gene = 5, col_name, decreasing = F) {
+  if ((class(obj) != "list") || 
+      (class(cluster_ident) != "numeric") ||
+      (cluster_ident >= length(obj)) || 
+      (class(num_gene) != "numeric") ||
+      (!col_name %in% c("p_val", "avg_log2FC")) ||
+      (class(decreasing) != "logical")) {
+    message("# Argument:")
+    message("#   obj: a list of dataframe, each dataframe contain gene symbol as row names, ")
+    message("#        p-val & avg_log2FC as column")
+    message("#   cluster_ident: the numeric identity of a cluster (cluster_ident < length(obj))")
+    message("#   num_gene: the number of top DEGs to extract (default == 5)")
+    message("#   col_name: either 'p_val' or 'avg_log2FC' ('p_val' || 'avg_log2FC')")
+    message("#   decreasing: decreasing or not (T/F, default == F)")
+  } else {
+    cluster_str <- paste("DEG_result_cluster", cluster_ident, sep = "")
+    return(head(row.names(obj[[cluster_str]]
+                          [order(obj[[cluster_str]][[col_name]], 
+                                 decreasing = decreasing), ]), num_gene))
   }
 }

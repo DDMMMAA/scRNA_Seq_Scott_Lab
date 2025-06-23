@@ -167,11 +167,6 @@ DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5,
         group.by = "SingleR.labels")
 
 ################################
-# Export mice_merged seurat obj into CSV file
-data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
-fwrite(x = data_to_write_out, row.names = TRUE, file = "mice_merged.csv")
-
-################################
 # Identify conserved cell type marker across control & treatment group
 # This step meant to help manual annotation
 Idents(mice_merged) <- "seurat_clusters"
@@ -189,20 +184,18 @@ DotPlot(mice_merged, features = markers.to.plot, cols = c("blue", "red"),
 DEGs_result <- DEGs_across_condition(mice_merged)
 
 # DEG visulization
-FeaturePlot(mice_merged, features = c("Cp", "Msh5"), split.by = "orig.ident", 
-            max.cutoff = 3, cols = c("grey", "red"), reduction = "umap")
-plots <- VlnPlot(mice_merged, features = c("Cp", "Msh5"), 
+# Extract top 5 DEGs of each cluster, sorted by increasing P-val
+genes.to.label <- extract_top_DEGs(DEGs_result, 
+                                   cluster_ident = 0, 
+                                   num_gene = 5, 
+                                   col_name = "p_val", 
+                                   decreasing = F)
+plots <- VlnPlot(mice_merged, features = genes.to.label, 
                  split.by = "orig.ident", group.by = "seurat_clusters",
-                 pt.size = 0, combine = FALSE)
+                 pt.size = 0.1, combine = FALSE)
 wrap_plots(plots = plots, ncol = 1)
 
-# "Pesudobulk visulization"
-aggregate_mice_merged <- AggregateExpression(mice_merged, 
-                                             group.by = c("seurat_clusters", "orig.ident"), 
-                                             return.seurat = TRUE)
-genes.to.label = c("A1cf")
-
-p1 <- CellScatter(aggregate_mice_merged, "g15_mice-treatment", "g15_mice-control", 
-                  highlight = genes.to.label)
-p2 <- LabelPoints(plot = p1, points = genes.to.label, repel = F)
-p2
+################################
+# Export mice_merged seurat obj into CSV file
+data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
+fwrite(x = data_to_write_out, row.names = TRUE, file = "mice_merged.csv")
