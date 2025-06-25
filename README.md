@@ -27,3 +27,10 @@
     ![Clustifyr](data/processed/mice_integrated/mice_merged_clustifyr_annotated.png)\
     [SingleR](https://github.com/dviraran/SingleR): (SingleR generate different cluster because it's annotated at single-cell level)\
     ![SingleR](data/processed/mice_integrated/mice_merged_SingleR_annotated.png)
+
+5. Complete DEGs analysis between control & treatment of Yuzwa's lab WMI dataset (2025/6/25).\
+   Manually determined "Top" DEGs:\
+   ![Selected_DEGs](data/processed/mice_integrated/Selected_DEGs.png)\
+   Influenced by the recent doubt about p-value == 0.05 initiated from this [Paper](https://doi.org/10.1080/00031305.2016.1154108). I calculate another `p_FC` value, which is a function of p_val and avg_log2FC to help me determine the "Significance" of DEGs rather than thresholding p == 0.05.
+   ### `p_FC = f(p_val, avg_log2FC) = (1 - p_val) * (avg_log2FC)`
+   
