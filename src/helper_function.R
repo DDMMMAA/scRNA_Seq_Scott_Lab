@@ -88,6 +88,18 @@ DEGs_across_condition <- function(obj) {
       enrich_res <- FindMarkers(obj, 
                                 ident.1 = paste(i, "_mice_control", sep = ""), 
                                 ident.2 = paste(i, "_mice_treatment", sep = ""))
+      # This line of code calculate the expected value of FC value is true
+      # Under the Ha assumption for each gene. It doesn't really have a biological
+      # interpretation (at least I can't think about one), but an two variable 
+      # function of p-value and avg_log2FC that generate a value to rank the 'significance'
+      # of DEGs. The propose of this value is 
+      # 1: disregard the ambiguous p-value == 0.05 absolute threshold 
+      # (https://doi.org/10.1080/00031305.2016.1154108)
+      # 2: Reduce the subjective human bias of determine the
+      # 'significance' of DEGs
+      # 3: Save time so that I don't need to worry p-value and avg_log2FC
+      # respectively
+      enrich_res$p_FC <- ((1 - enrich_res$p_val) * (enrich_res$avg_log2FC))
       result[[result_name]] <- enrich_res
       message("Complete cluster: ", i)
     }

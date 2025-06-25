@@ -14,6 +14,7 @@ library(clustifyr)
 library(clustifyrdatahub)
 library(SingleR)
 library(celldex)
+library(ggpubr)
 
 #######################
 # include Helper function
@@ -195,6 +196,49 @@ plots <- VlnPlot(mice_merged, features = genes.to.label,
                  pt.size = 0.1, combine = FALSE)
 wrap_plots(plots = plots, ncol = 1)
 
+# Construct DEGs dataframe of manually selected "interesting" DEGs
+# Yeah, this is dump, I hope there is an elegant automatic way to do this
+Selected_DEGs <- list(Cluster0 = list(Up = c("Cp"), 
+                                       Down = c("Msh5")), 
+                          cluster1 = list(Up = c("Cp"), 
+                                       Down = c("Plac8", "Msh5")), 
+                          cluster2 = list(Up = c("Cp"), 
+                                       Down = c("Msh5", "Tnfsf18")), 
+                          cluster3 = list(Up = c("Xrccl", "Hbb-bt", "Tmsb4x"), 
+                                       Down = c("Gm6260", "1500004A13Rik")), 
+                          cluster4 = list(Up = c("Rbfox1", "Tatdn1"), 
+                                       Down = c("Cwc22", "Acaa2")), 
+                          cluster5 = list(Up = c("Cp"), 
+                                       Down = c("Gm42047")), 
+                          cluster6 = list(Up = c("Cp", "Rbfox1", "Ube216"), 
+                                       Down = c("Msh5")), 
+                          cluster7 = list(Up = c("Cp", "Ntm", "Lsamp", "Meg3"), 
+                                       Down = c("Msh5", "Hpgd", "Rrp9")), 
+                          cluster8 = list(Up = c("Hbb-bt", "Hbb-bs", "Hba-a", "Srsf11", "Atpif1", "Lin7a", "Caskin2", "Dele1"), 
+                                       Down = c("Brcc3", "Rpl9-ps6", "Fcor", "Stk32c", "Gm5087", "Gm3445")), 
+                          cluster9 = list(Up = c("Col1a1", "Col12a1", "Col3a1", "Slc47a1", "Slc22a8", "Slc4a10", "Mgp", "Airn", "Aldh1a2"), 
+                                       Down = c("Hbb-bt", "Hbb-bs", "Hba-a")), 
+                          cluster10 = list(Up = c("Slc13a3", "Gm15675", "Fpr2", "Ttn"), 
+                                        Down = c("Gm49144", "Slc27a6", "Pdgfc", "Ifi27l2a", "Ccl5")), 
+                          cluster11 = list(Up = c("Jund", "Veph1", "Arhgap23", "Rps4x", "Cx3cr1"), 
+                                        Down = c("Ppp5c", "Zfp335os", "Zfp687", "Pip4p1", "Atg4b")), 
+                          cluster12 = list(Up =c("Chil3", "Hba-a1", "Hbb-bt", "Cxcr6", "Trgc2"), 
+                                        Down = c("Vpreb1", "Dntt", "Cwc22", "Igll1", "Cd46")), 
+                          cluster13 = list(Up = c("E230029C05Rik", "A330076H08Rik", "Cx3cr1", "Mctp1", "Sorcs1"), 
+                                        Down = c("Pdcd4", "Rc3h2", "Galnt11", "Sp3", "Ube2g1")), 
+                          cluster14 = list(Up = c("Hba-a2"), 
+                                        Down = c("Sdhb", "Hbp1", "Rhbdf2")), 
+                          cluster15 = list(Up = c("Cx3cr1", "Pla2g7", "Ccser1", "Gabrb1"), 
+                                        Down = c("Sncaip", "Dhcr24", "Zfp950", "Cdip1", "Ndufa13"))
+)
+Selected_DEGs <- as.data.frame(do.call(rbind, Selected_DEGs))
+Selected_DEGs <- data.frame(
+  Cluster = rownames(Selected_DEGs),
+  Up = sapply(Selected_DEGs$Up, function(x) paste(x, collapse = ", ")),
+  Down = sapply(Selected_DEGs$Down, function(x) paste(x, collapse = ", ")),
+  stringsAsFactors = FALSE
+)
+ggtexttable(Selected_DEGs, rows = NULL, theme = ttheme("light"))
 ################################
 # Export mice_merged seurat obj into CSV file
 data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
