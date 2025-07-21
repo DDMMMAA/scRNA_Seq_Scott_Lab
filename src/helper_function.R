@@ -69,37 +69,48 @@ enrichGO.clusters <- function(obj, num_top_gene = 30, ont) {
 
 ##################################
 # wrapper for DEG of clusters across conditions
-# Perform DEF of all clusters across conditions
-# Return a vector of data.frame that store DEGs
+# Perform DEG of "control" of all clusters w/ respect to all treatment group
+# Return a list of list of data.frame that store DEGs
 # Argument:
 #   obj: A seurat object
-DEGs_across_condition <- function(obj) {
-  if(any(class(obj) != "Seurat")) {
+#   control_name: the name of "Control" group used in orig.ident
+DEGs_across_condition <- function(obj, control_name) {
+  if(any(class(obj) != "Seurat") ||
+    (class(control_name) != "character")){
     message("# Argument:")
     message("#   obj: a Seurat object")
+    message("#   control_name: the name of 'Control' group used in orig.ident")
   } else {
     obj$celltype.condition <- paste(obj$seurat_clusters, 
                                             obj$orig.ident, sep = "_")
     Idents(obj) <- "celltype.condition"
     result <- list()
+    treatment_groups <- unique(obj$orig.ident)
+    treatment_groups <- treatment_groups[ !treatment_groups == control_name]
     for (i in levels(obj$seurat_clusters)) {
-      cluster_name <- paste("Cluster", i, sep = "")
+      # The line above might be redundant, comment out to test
+      # cluster_name <- paste("Cluster", i, sep = "")
       result_name <- paste("DEG_result_cluster", i, sep = "")
-      enrich_res <- FindMarkers(obj, 
-                                ident.1 = paste(i, "_mice_control", sep = ""), 
-                                ident.2 = paste(i, "_mice_treatment", sep = ""))
-      # This line of code calculate the expected value of FC value is true
-      # Under the Ha assumption for each gene. It doesn't really have a biological
-      # interpretation (at least I can't think about one), but an two variable 
-      # function of p-value and avg_log2FC that generate a value to rank the 'significance'
-      # of DEGs. The propose of this value is 
-      # 1: disregard the ambiguous p-value == 0.05 absolute threshold 
-      # (https://doi.org/10.1080/00031305.2016.1154108)
-      # 2: Reduce the subjective human bias of determine the
-      # 'significance' of DEGs
-      # 3: Save time so that I don't need to worry p-value and avg_log2FC
-      # respectively
-      enrich_res$p_FC <- ((1 - enrich_res$p_val) * (enrich_res$avg_log2FC))
+      enrich_res <- list()
+      message(treatment_groups)
+      for (treatment_group in treatment_groups) {
+        enrich_res[[treatment_group]] <- FindMarkers(obj, 
+                                  ident.1 = paste(i, control_name, sep = "_"), 
+                                  ident.2 = paste(i, treatment_group, sep = "_"))
+        # This line of code calculate the expected value of FC value is true
+        # Under the Ha assumption for each gene. It doesn't really have a biological
+        # interpretation (at least I can't think about one), but an two variable 
+        # function of p-value and avg_log2FC that generate a value to rank the 'significance'
+        # of DEGs. The propose of this value is 
+        # 1: disregard the ambiguous p-value == 0.05 absolute threshold 
+        # (https://doi.org/10.1080/00031305.2016.1154108)
+        # 2: Reduce the subjective human bias of determine the
+        # 'significance' of DEGs
+        # 3: Save time so that I don't need to worry p-value and avg_log2FC
+        # respectively
+        enrich_res[[treatment_group]]$p_FC <- ((1 - enrich_res[[treatment_group]]$p_val) * 
+                                                 (enrich_res[[treatment_group]]$avg_log2FC))
+      }
       result[[result_name]] <- enrich_res
       message("Complete cluster: ", i)
     }
@@ -112,30 +123,123 @@ DEGs_across_condition <- function(obj) {
 # rank top DEGs based on either P-val or avg_log2FC
 # Return a vector of gene symbol
 # Argument:
-#   obj: a list of dataframe, each dataframe contain gene symbol as row names, 
+#   obj: a list of list of dataframe, each dataframe contain gene symbol as row names, 
 #        p-val & avg_log2FC as column
 #   cluster_ident: the numeric identity of a cluster (cluster_ident < length(obj))
 #   num_gene: the number of top DEGs to extract (default == 5)
 #   col_name: either "p_val" or "avg_log2FC" ("p_val" || "avg_log2FC")
-#   decreasing: decreasing or not (T/F, default == F)
-extract_top_DEGs <- function(obj, cluster_ident, num_gene = 5, col_name, decreasing = F) {
+#   decreasing: order of col_name, decreasing or not (T/F, default == F)
+#   treatment_group: The group of DEGs w/ respect to
+extract_top_DEGs <- function(obj, 
+                             cluster_ident, 
+                             num_gene = 5, 
+                             col_name, 
+                             decreasing = F, 
+                             treatment_group) {
   if ((class(obj) != "list") || 
-      (class(cluster_ident) != "numeric") ||
+      ((class(cluster_ident) != "numeric") && (class(cluster_ident) != "integer")) ||
       (cluster_ident >= length(obj)) || 
-      (class(num_gene) != "numeric") ||
-      (!col_name %in% c("p_val", "avg_log2FC")) ||
-      (class(decreasing) != "logical")) {
+      ((class(num_gene) != "numeric") && (class(num_gene) != "integer")) ||
+      (!col_name %in% c("p_val", "avg_log2FC", "p_FC")) ||
+      (class(decreasing) != "logical") ||
+      (class(treatment_group) != "character")) {
     message("# Argument:")
     message("#   obj: a list of dataframe, each dataframe contain gene symbol as row names, ")
     message("#        p-val & avg_log2FC as column")
     message("#   cluster_ident: the numeric identity of a cluster (cluster_ident < length(obj))")
     message("#   num_gene: the number of top DEGs to extract (default == 5)")
     message("#   col_name: either 'p_val' or 'avg_log2FC' ('p_val' || 'avg_log2FC')")
-    message("#   decreasing: decreasing or not (T/F, default == F)")
+    message("#   decreasing: order of col_name, decreasing or not (T/F, default == F)")
   } else {
     cluster_str <- paste("DEG_result_cluster", cluster_ident, sep = "")
-    return(head(row.names(obj[[cluster_str]]
-                          [order(obj[[cluster_str]][[col_name]], 
+    return(head(row.names(obj[[cluster_str]][[treatment_group]]
+                          [order(obj[[cluster_str]][[treatment_group]][[col_name]], 
                                  decreasing = decreasing), ]), num_gene))
+  }
+}
+
+################################
+# Wrapper for subsetting DEGs
+# Return a list of list of data.frame that store DEGs
+# Argument:
+#   obj: a list of list of data.frame that store DEGs
+#   logic_exp: a logical expression that determine which DEGs to subset ("character")
+subset_DEGs <- function(obj, logic_exp) {
+  if ((class(obj) != "list") || 
+      (class(logic_exp) != "character")) {
+    message("# Argument:")
+    message("#   obj: a list of list of dataframe storing DEGs")
+    message("#   logic_exp: a logical expression that determine which DEGs to subset ('character')")
+  } else {
+    result_cluster <- list()
+    for (i in names(obj)) {
+      result_cluster[[i]] <- list()
+      for (j in names(obj[[i]])) {
+        df <- obj[[i]][[j]]
+        result_cluster[[i]][[j]] <- df[eval(parse(text = logic_exp), envir = df), ]
+      }      
+    }
+    return(result_cluster)
+  }
+}
+
+################################
+# Wrapper for run enrichGO among all DEGs, export GO barplot optionally
+# Return a list of list of data.frame that store DEGs' GO result
+# Argument:
+#   obj: a list of list of data.frame that store DEGs
+#   export_figure: export GO barplot figure or not (T/F)
+#   dir: the dir of exported figure, if "export_figure" == T ("character")
+#   width: width of exported figure, if "export_figure" == T ("numeric")
+#   height: height of exported figure, if "export_figure" == T ("numeric")
+DEGs_enrichGO <- function(obj, export_figure = F, dir, width = 1280, height = 720) {
+  if ((class(obj) != "list") || 
+      (class(export_figure) != "logical") ||
+      (class(dir) != "character") ||
+      (class(width) != "numeric") ||
+      (class(height) != "numeric")) {
+    message("# Argument:")
+    message("#   obj: a list of list of data.frame that store DEGs")
+    message("#   export_figure: export GO barplot figure or not (T/F)")
+    message("#   dir: the dir of exported figure, if 'export_figure' == T ('character')")
+    message("#   width: width of exported figure, if 'export_figure' == T ('numeric')")
+    message("#   height: height of exported figure, if 'export_figure' == T ('numeric')")
+  } else {
+    GO_result_cluster <- list()
+    # Test is figure need to be export and provided dir doesn't exists
+    if ((export_figure == T) && (!dir.exists(dir))) {
+      dir.create(dir)
+    }
+    for (i in names(obj)) {
+      GO_result_cluster[[i]] <- list()
+      # Test is figure need to be export and cluster_subdir of provided dir doesn't exists
+      cluster_subdir <- paste(dir, i, sep = "/")
+      if ((export_figure == T) && (!dir.exists(cluster_subdir))) {
+        dir.create(cluster_subdir)
+      }
+      for (j in names(obj[[i]])) {
+        df <- obj[[i]][[j]]
+        genes.to.GO <- row.names(df)
+        genes.to.GO <- mapIds(org.Mm.eg.db, keys = genes.to.GO, keytype = "SYMBOL", column="ENSEMBL")
+        GO_result_cluster[[i]][[j]] <- enrichGO(gene = genes.to.GO, 
+                                                keyType = "ENSEMBL", 
+                                                OrgDb = "org.Mm.eg.db", 
+                                                ont = "BP")
+        plot <- barplot(GO_result_cluster[[i]][[j]], showCategory = 10)
+        treatment_GO_name <- paste(cluster_subdir, j, sep = "/")
+        treatment_GO_name <- paste(treatment_GO_name, ".png", sep = "")
+        # Test if figure need to be export
+        if((export_figure == T) && 
+           (nrow(subset(GO_result_cluster[[i]][[j]]@result, subset = (p.adjust <= 0.05)))) != 0) {
+          # export figure
+          png(filename = treatment_GO_name, width = width, height = height)
+          print(plot)
+          dev.off()
+        }
+        message("Complete treatment:", j)
+      }
+      message("Complete Cluster:", i)
+    }
+    return(GO_result_cluster)
   }
 }

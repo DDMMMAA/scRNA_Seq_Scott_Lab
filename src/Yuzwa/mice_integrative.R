@@ -182,7 +182,7 @@ DotPlot(mice_merged, features = markers.to.plot, cols = c("blue", "red"),
 
 ################################
 # Identify DEG across conditions
-DEGs_result <- DEGs_across_condition(mice_merged)
+DEGs_result <- DEGs_across_condition(mice_merged, "mice_control")
 
 # DEG visulization
 # Extract top 5 DEGs of each cluster, sorted by increasing P-val
@@ -190,7 +190,8 @@ genes.to.label <- extract_top_DEGs(DEGs_result,
                                    cluster_ident = 0, 
                                    num_gene = 5, 
                                    col_name = "p_val", 
-                                   decreasing = F)
+                                   decreasing = F, 
+                                   "mice_treatment")
 plots <- VlnPlot(mice_merged, features = genes.to.label, 
                  split.by = "orig.ident", group.by = "seurat_clusters",
                  pt.size = 0.1, combine = FALSE)

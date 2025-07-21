@@ -16,6 +16,8 @@ library(SingleR)
 library(celldex)
 library(ggpubr)
 library(bit64)
+library(enrichplot)
+library("org.Mm.eg.db")
 
 #######################
 # include Helper function
@@ -45,11 +47,12 @@ Wakui_merged <- merge(x = Wakui_cortex1,
                      y = c(Wakui_cortex2, Wakui_cortex3, Wakui_cortex4))
 
 # QC
+# This dataset is seemingly poor, only ~10% cell remained
 Wakui_merged <- subset(Wakui_merged, subset = nFeature_RNA > 200 & 
                          nFeature_RNA < 6000)
 ########################
 # Perform analysis w/o integration
-# run standard anlaysis workflow (QC is skipped since it's already performed prior merging)
+# run standard anlaysis workflow
 Wakui_merged <- NormalizeData(Wakui_merged)
 Wakui_merged <- FindVariableFeatures(Wakui_merged)
 Wakui_merged <- ScaleData(Wakui_merged)
@@ -58,6 +61,7 @@ Wakui_merged <- RunPCA(Wakui_merged)
 # Determine the dimentionality
 ElbowPlot(Wakui_merged)
 
+# Dimentionality = 10
 Wakui_merged <- FindNeighbors(Wakui_merged, 
                              dims = 1:10, 
                              reduction = "pca")
@@ -167,7 +171,7 @@ x <- cor_to_call(clustify(
   ref_mat = ref_MCA()
 ))
 
-# Rename cluster based on result above
+# Rename cluster based on result x above
 new.cluster.ids <- c("Macrophage_1", "Dopaminergic neuron_1", "Granule neurons_1", 
                      "Oligodendrocyte precursor_1", "Dopaminergic neurons_2", 
                      "Dopaminergic neurons_3", "Dopaminergic neurons_4", 
@@ -194,7 +198,17 @@ SingleR_result <- SingleR(as.data.frame(as.matrix(Wakui_merged[["RNA"]]$data)),
 Wakui_merged$SingleR.labels <- SingleR_result$labels
 DimPlot(Wakui_merged, reduction = "umap", label = TRUE, pt.size = 0.5, 
         group.by = "SingleR.labels", repel = T)
+################################
+# plot cluster proportion
+pt <- table(Wakui_merged$seurat_clusters, Wakui_merged$orig.ident)
+pt <- as.data.frame(pt)
+pt$Var1 <- as.character(pt$Var1)
 
+ggplot(pt, aes(x = Var2, y = Freq, fill = Var1)) +
+  theme_bw(base_size = 15) +
+  geom_col(position = "fill", width = 0.5) +
+  xlab("Sample") +
+  ylab("Proportion")
 ################################
 # Identify conserved cell type marker across control & treatment group
 # This step meant to help manual annotation
@@ -209,63 +223,103 @@ DotPlot(Wakui_merged, features = markers.to.plot, cols = c("blue", "red", "yello
 
 ################################
 # Identify DEG across conditions
-DEGs_result <- DEGs_across_condition(Wakui_merged)
+DEGs_result <- DEGs_across_condition(Wakui_merged, "Sham")
+
+# Subset DEGs that have either pct.1 or pct.2 > 0.1, meant to accommodate low dataset quality
+DEGs_result_subset <- subset_DEGs(DEGs_result, 
+                                   "pct.1 > 0.1 & 
+                                   pct.2 > 0.1 & 
+                                   p_val < 0.05 & 
+                                   (avg_log2FC > 0.25 | avg_log2FC < -0.25)")
+
+DEGs_result_subset_Up <- subset_DEGs(DEGs_result_subset, 
+                                     "avg_log2FC < 0")
+
+DEGs_result_subset_Down <- subset_DEGs(DEGs_result_subset, 
+                                     "avg_log2FC > 0")
+
+# Subset Seurat obj so that it only contain "Sham" and "Hypoxia" group
+Wakui_merged_hypoxia <- subset(Wakui_merged, subset = orig.ident == "Hypoxia" | orig.ident == "Sham")
+# Subset Seurat obj so that it only contain "Sham" and "Hypoxia" group
+Wakui_merged_HIE <- subset(Wakui_merged, subset = orig.ident == "HIE" | orig.ident == "Sham")
+
+# Extract top "num_gene" Upregulated DEGs of cluster "cluster_ident", sorted by given "col_name"
+# Or can use two lines of commented code below to itreatively GO DEGs of all cluster among all treatment
+# DEGs_GO_Up <- DEGs_enrichGO(DEGs_result_subset_Up, export_figure = F, dir = '')
+# DEGs_GO_Down <- DEGs_enrichGO(DEGs_result_subset_Down, export_figure = F, dir = '')
+genes.to.label <- extract_top_DEGs(DEGs_result_subset_Up, 
+                                   cluster_ident = 0, 
+                                   num_gene = 100, 
+                                   col_name = "p_FC", 
+                                   decreasing = F, 
+                                   "Hypoxia")
+
+# GO analysis of top DEGs selected above
+DEGs_GO <- enrichGO(gene = genes.to.label, 
+                    keyType = "SYMBOL", 
+                    OrgDb = "org.Mm.eg.db", 
+                    ont = "BP")
+
+barplot(DEGs_GO, showCategory = 5)
 
 # DEG visulization
-# Extract top 5 DEGs of each cluster, sorted by increasing P-val
-genes.to.label <- extract_top_DEGs(DEGs_result, 
-                                   cluster_ident = 0, 
-                                   num_gene = 5, 
-                                   col_name = "p_val", 
-                                   decreasing = F)
-plots <- VlnPlot(Wakui_merged, features = genes.to.label, 
+plots <- VlnPlot(Wakui_merged, features = genes.to.label[0:5], 
                  split.by = "orig.ident", group.by = "seurat_clusters",
                  pt.size = 0.1, combine = FALSE)
 wrap_plots(plots = plots, ncol = 1)
 
-# Construct DEGs dataframe of manually selected "interesting" DEGs
-# Yeah, this is dump, I hope there is an elegant automatic way to do this
-Selected_DEGs <- list(Cluster0 = list(Up = c("Cp"), 
-                                       Down = c("Msh5")), 
-                          cluster1 = list(Up = c("Cp"), 
-                                       Down = c("Plac8", "Msh5")), 
-                          cluster2 = list(Up = c("Cp"), 
-                                       Down = c("Msh5", "Tnfsf18")), 
-                          cluster3 = list(Up = c("Xrccl", "Hbb-bt", "Tmsb4x"), 
-                                       Down = c("Gm6260", "1500004A13Rik")), 
-                          cluster4 = list(Up = c("Rbfox1", "Tatdn1"), 
-                                       Down = c("Cwc22", "Acaa2")), 
-                          cluster5 = list(Up = c("Cp"), 
-                                       Down = c("Gm42047")), 
-                          cluster6 = list(Up = c("Cp", "Rbfox1", "Ube216"), 
-                                       Down = c("Msh5")), 
-                          cluster7 = list(Up = c("Cp", "Ntm", "Lsamp", "Meg3"), 
-                                       Down = c("Msh5", "Hpgd", "Rrp9")), 
-                          cluster8 = list(Up = c("Hbb-bt", "Hbb-bs", "Hba-a", "Srsf11", "Atpif1", "Lin7a", "Caskin2", "Dele1"), 
-                                       Down = c("Brcc3", "Rpl9-ps6", "Fcor", "Stk32c", "Gm5087", "Gm3445")), 
-                          cluster9 = list(Up = c("Col1a1", "Col12a1", "Col3a1", "Slc47a1", "Slc22a8", "Slc4a10", "Mgp", "Airn", "Aldh1a2"), 
-                                       Down = c("Hbb-bt", "Hbb-bs", "Hba-a")), 
-                          cluster10 = list(Up = c("Slc13a3", "Gm15675", "Fpr2", "Ttn"), 
-                                        Down = c("Gm49144", "Slc27a6", "Pdgfc", "Ifi27l2a", "Ccl5")), 
-                          cluster11 = list(Up = c("Jund", "Veph1", "Arhgap23", "Rps4x", "Cx3cr1"), 
-                                        Down = c("Ppp5c", "Zfp335os", "Zfp687", "Pip4p1", "Atg4b")), 
-                          cluster12 = list(Up =c("Chil3", "Hba-a1", "Hbb-bt", "Cxcr6", "Trgc2"), 
-                                        Down = c("Vpreb1", "Dntt", "Cwc22", "Igll1", "Cd46")), 
-                          cluster13 = list(Up = c("E230029C05Rik", "A330076H08Rik", "Cx3cr1", "Mctp1", "Sorcs1"), 
-                                        Down = c("Pdcd4", "Rc3h2", "Galnt11", "Sp3", "Ube2g1")), 
-                          cluster14 = list(Up = c("Hba-a2"), 
-                                        Down = c("Sdhb", "Hbp1", "Rhbdf2")), 
-                          cluster15 = list(Up = c("Cx3cr1", "Pla2g7", "Ccser1", "Gabrb1"), 
-                                        Down = c("Sncaip", "Dhcr24", "Zfp950", "Cdip1", "Ndufa13"))
-)
-Selected_DEGs <- as.data.frame(do.call(rbind, Selected_DEGs))
-Selected_DEGs <- data.frame(
-  Cluster = rownames(Selected_DEGs),
-  Up = sapply(Selected_DEGs$Up, function(x) paste(x, collapse = ", ")),
-  Down = sapply(Selected_DEGs$Down, function(x) paste(x, collapse = ", ")),
+# extract top 5 up & down regulated DEGs based on p_FC value
+Selected_DEGs_Up <- list()
+k <- 0
+for (i in names(DEGs_result_subset_Up)) {
+  Selected_DEGs_Up[[i]] <- list()
+  for (j in names(DEGs_result_subset_Up[[i]])) {
+    Selected_DEGs_Up[[i]][[j]] <- extract_top_DEGs(DEGs_result_subset_Up, 
+                                                   cluster_ident = k, 
+                                                   num_gene = 5, 
+                                                   col_name = "p_FC", 
+                                                   decreasing = F, 
+                                                   treatment_group = j)
+  }
+  k <- k + 1
+}
+
+Selected_DEGs_Down <- list()
+k <- 0
+for (i in names(DEGs_result_subset_Down)) {
+  Selected_DEGs_Down[[i]] <- list()
+  for (j in names(DEGs_result_subset_Down[[i]])) {
+    Selected_DEGs_Down[[i]][[j]] <- extract_top_DEGs(DEGs_result_subset_Down, 
+                                                   cluster_ident = k, 
+                                                   num_gene = 5, 
+                                                   col_name = "p_FC", 
+                                                   decreasing = T, 
+                                                   treatment_group = j)
+  }
+  k <- k + 1
+}
+
+# Plot spreadsheet of top 5 Upregulated DEGs
+Selected_DEGs_Up <- as.data.frame(do.call(rbind, Selected_DEGs_Up))
+Selected_DEGs_Up <- data.frame(
+  Cluster = sub("^DEG_result_", "", rownames(Selected_DEGs_Up)),
+  Hypoxia = sapply(Selected_DEGs_Up$Hypoxia, function(x) paste(x, collapse = ", ")),
+  CI = sapply(Selected_DEGs_Up$CI, function(x) paste(x, collapse = ", ")), 
+  HIE = sapply(Selected_DEGs_Up$HIE, function(x) paste(x, collapse = ", ")),
   stringsAsFactors = FALSE
 )
-ggtexttable(Selected_DEGs, rows = NULL, theme = ttheme("light"))
+ggtexttable(Selected_DEGs_Up, rows = NULL, theme = ttheme("light"))
+
+# Plot spreadsheet of top 5 Downregulated DEGs
+Selected_DEGs_Down <- as.data.frame(do.call(rbind, Selected_DEGs_Down))
+Selected_DEGs_Down <- data.frame(
+  Cluster = sub("^DEG_result_", "", rownames(Selected_DEGs_Down)),
+  Hypoxia = sapply(Selected_DEGs_Down$Hypoxia, function(x) paste(x, collapse = ", ")),
+  CI = sapply(Selected_DEGs_Down$CI, function(x) paste(x, collapse = ", ")), 
+  HIE = sapply(Selected_DEGs_Down$HIE, function(x) paste(x, collapse = ", ")),
+  stringsAsFactors = FALSE
+)
+ggtexttable(Selected_DEGs_Down, rows = NULL, theme = ttheme("light"))
 ################################
 # Export Wakui_merged seurat obj into CSV file
 data_to_write_out <- as.data.frame(as.matrix(Wakui_merged[["RNA"]]$data))
