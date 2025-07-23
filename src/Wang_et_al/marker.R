@@ -19,11 +19,24 @@ entry_list <- lapply(df, function(df) {
   head(as.character(df[[2]]), 4)
 })
 
-Wang_et_al_Marker[["sup_table3b"]] <- entry_list
+capitalize_first_list <- function(entry_list) {
+  lapply(entry_list, function(vec) {
+    sapply(vec, function(str) {
+      str <- tolower(str)
+      if (nchar(str) == 0) return(str)
+      paste0(toupper(substr(str, 1, 1)), substr(str, 2, nchar(str)))
+    }, USE.NAMES = FALSE)
+  })
+}
+
+capitalized <- capitalize_first_list(entry_list)
+
+Wang_et_al_Marker[["sup_table3b"]] <- capitalized
 
 rm(df)
 rm(trimmed_list)
 rm(entry_list)
+rm(capitalized)
 ##################################################
 # marker gene from snMultiome analysis shown on paper
 snMultiome_marker <- list()
