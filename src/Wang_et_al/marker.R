@@ -1,9 +1,31 @@
+library(readxl)
 # This file contain markers utilized in Wang_et_al
 # (https://doi.org/10.1038/s41586-024-08351-7)
 Wang_et_al_Marker <- list()
 
 ##################################################
-# marker identified via snMultiome analysis
+# Top 4 marker gene documented in Sup table 3b
+df <- read_excel("data/raw/Wang_et_al/Supplementary Table 3.xlsx", 
+                 sheet = 2, 
+                 col_names = F)
+colnames(df) <- as.character(df[2, ])
+df <- df[-c(1,2), ]
+
+df <- split(df, df$`Cell type`)
+
+trimmed_list <- lapply(df, function(df) head(df[, 2, drop = FALSE], 4))
+
+entry_list <- lapply(df, function(df) {
+  head(as.character(df[[2]]), 4)
+})
+
+Wang_et_al_Marker[["sup_table3b"]] <- entry_list
+
+rm(df)
+rm(trimmed_list)
+rm(entry_list)
+##################################################
+# marker gene from snMultiome analysis shown on paper
 snMultiome_marker <- list()
 
 snMultiome_marker[["Microglia"]] <- c("Irf8")
