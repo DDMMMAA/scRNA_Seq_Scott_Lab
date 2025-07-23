@@ -20,6 +20,8 @@ library(ggpubr)
 # include Helper function
 source("src/helper_function.R")
 
+# include DEGs/marker utilized in Wang_et_al
+source("src/Wang_et_al/marker.R")
 #######################
 # Read control & treatment Seurat obj result from previous separate analysis
 mice_control <- readRDS(file = "data/processed/Yuzwa/mice_control/seuratObj_mice_control.RData")
@@ -166,6 +168,18 @@ SingleR_result <- SingleR(as.data.frame(as.matrix(mice_merged[["RNA"]]$data)),
 mice_merged$SingleR.labels <- SingleR_result$labels
 DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5, 
         group.by = "SingleR.labels")
+
+################################
+# plot cluster proportion
+pt <- table(mice_merged$seurat_clusters, mice_merged$orig.ident)
+pt <- as.data.frame(pt)
+pt$Var1 <- as.character(pt$Var1)
+
+ggplot(pt, aes(x = Var2, y = Freq, fill = Var1)) +
+  theme_bw(base_size = 15) +
+  geom_col(position = "fill", width = 0.5) +
+  xlab("Sample") +
+  ylab("Proportion")
 
 ################################
 # Identify conserved cell type marker across control & treatment group

@@ -24,6 +24,8 @@ library("org.Mm.eg.db")
 source("src/helper_function.R")
 source("src/Wakui_et_al/Wakui_et_al_helper.R")
 
+# include DEGs/marker utilized in Wang_et_al
+source("src/Wang_et_al/marker.R")
 #####################################
 # Raw data dir
 # Loop over Experiment repeat to create correspond Seurat obj
