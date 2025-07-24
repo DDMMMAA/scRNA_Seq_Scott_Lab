@@ -13,10 +13,85 @@ df <- df[-c(1,2), ]
 
 df <- split(df, df$`Cell type`)
 
-trimmed_list <- lapply(df, function(df) head(df[, 2, drop = FALSE], 4))
+# Merge Astrocyte marker from three astrocyte cluster
+Astro_df <- merge.data.frame(df$`Astrocyte-Fibrous`, df$`Astrocyte-Immature`, all = T)
+Astro_df <- merge.data.frame(Astro_df, df$`Astrocyte-Protoplasmic`, all = T)
 
-entry_list <- lapply(df, function(df) {
-  head(as.character(df[[2]]), 4)
+# Merge RG marker from three RG cluster
+RG_df <- merge.data.frame(df$`RG-oRG`, df$`RG-tRG`, all = T)
+RG_df <- merge.data.frame(RG_df, df$`RG-vRG`, all = T)
+
+# Merge EN marker from EN clusters
+EN_df <- merge.data.frame(df$`EN-IT-Immature`, df$`EN-L2_3-IT`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-L4-IT`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-L5-ET`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-L5-IT`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-L5_6-NP`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-L6-CT`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-L6-IT`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-L6b`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-Newborn`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`EN-Non-IT-Immature`, all = T)
+EN_df <- merge.data.frame(EN_df, df$`IPC-EN`, all = T)
+
+# Merge IN marker from IN clusters
+IN_df <- merge.data.frame(df$`IN-CGE-Immature`, df$`IN-CGE-SNCG`, all = T)
+IN_df <- merge.data.frame(IN_df, df$`IN-CGE-VIP`, all = T)
+IN_df <- merge.data.frame(IN_df, df$`IN-dLGE-Immature`, all = T)
+IN_df <- merge.data.frame(IN_df, df$`IN-MGE-Immature`, all = T)
+IN_df <- merge.data.frame(IN_df, df$`IN-MGE-PV`, all = T)
+IN_df <- merge.data.frame(IN_df, df$`IN-MGE-SST`, all = T)
+IN_df <- merge.data.frame(IN_df, df$`IN-Mix-LAMP5`, all = T)
+###############################
+# Merge duplicated gene
+for (df2 in c("Astro_df", "RG_df", "EN_df", "IN_df")) {
+  # Step 1: Find duplicated Genes (i.e., Genes with multiple entries)
+  dup_genes <- get(df2)$Gene[duplicated(get(df2)$Gene) | duplicated(get(df2)$Gene, fromLast = TRUE)]
+  
+  # Step 2: Merge duplicates
+  merged_dup_df <- get(df2) %>%
+    filter(Gene %in% dup_genes) %>%
+    mutate(across(-Gene, ~ as.numeric(as.character(.)), .names = "{.col}")) %>%
+    group_by(Gene) %>%
+    summarise(across(where(is.numeric), mean, na.rm = TRUE), .groups = "drop") %>%
+    mutate(duplicated = TRUE) %>%
+    select(duplicated, Gene, everything())
+  merged_dup_df <- merged_dup_df[,-3]
+  
+  # Step 3: Retain non-duplicated rows
+  nondup_df <- get(df2) %>%
+    filter(!(Gene %in% dup_genes)) %>%
+    mutate(across(-Gene, ~ as.numeric(as.character(.)), .names = "{.col}")) 
+  
+  # Step 4: Combine both
+  final_df <- bind_rows(merged_dup_df, nondup_df)
+  df[[df2]] <- final_df
+}
+rm(EN_df)
+rm(IN_df)
+rm(RG_df)
+rm(Astro_df)
+rm(final_df)
+rm(merged_dup_df)
+rm(nondup_df)
+rm(df2)
+rm(dup_genes)
+####################################################
+# trimmed_list <- lapply(df, function(df) head(df[, 2, drop = FALSE], 4))
+trimmed_list <- lapply(df, function(d) {
+  d$Average_log2_fold_change <- as.numeric(as.character(d$Average_log2_fold_change))
+  d <- d[order(-d$Average_log2_fold_change), ]
+  d[1:4, 2, drop = FALSE]
+})
+
+#entry_list <- lapply(df, function(df) {
+#  head(as.character(df[[2]]), 4)
+#})
+
+entry_list <- lapply(df, function(d) {
+  d$Average_log2_fold_change <- as.numeric(as.character(d$Average_log2_fold_change))
+  d <- d[order(-d$Average_log2_fold_change), ]
+  head(as.character(d[[2]]), 4)
 })
 
 capitalize_first_list <- function(entry_list) {
