@@ -159,7 +159,7 @@ Vitro_marker <- list()
 
 Vitro_marker[["RG"]] <- c("Tfap2c", "Cryab")
 
-Vitro_marker[["Tri_IPC"]] <- c("Olig2", "EGFR")
+Vitro_marker[["Tri_IPC"]] <- c("Olig2", "Egfr")
 
 Wang_et_al_Marker[["Vitro_marker"]] <- Vitro_marker
 

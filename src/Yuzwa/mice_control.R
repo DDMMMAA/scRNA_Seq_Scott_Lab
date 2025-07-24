@@ -7,6 +7,8 @@ library(clusterProfiler)
 # include Helper function
 source("src/helper_function.R")
 
+# include DEGs/marker utilized in Wang_et_al
+source("src/Wang_et_al/marker.R")
 #####################################
 #Global Variable
 target_sample_directory <- "data/raw/Yuzwa/Control-10K_RSEC_MolsPerCell_MEX 1/"
@@ -110,6 +112,21 @@ cluster0.markers <- FindMarkers(mice_control, ident.1 = 0,
 # Visualization
 VlnPlot(mice_control, features = c("Enpp2", "Igfbp2"))
 
+mice_control.markers.cluster <- split(mice_control.markers, mice_control.markers$cluster)
+
+filtered_deg_list <- lapply(mice_control.markers.cluster, function(df) {
+  subset(df, 
+         pct.1 > 0.1 & 
+           pct.2 > 0.1 & 
+           p_val < 0.05 & 
+           (avg_log2FC > 0.25 | avg_log2FC < -0.25))
+})
+
+filtered_deg_list <- lapply(filtered_deg_list, function(df) {
+  df$p_FC <- (1 - df$p_val) * df$avg_log2FC
+  return(df)
+})
+
 ###################################
 # Test of known marker gene
 # Astrocyte marker
@@ -147,7 +164,56 @@ new.cluster.ids <- c("Immune_1*", "1", "2", "Oligogendrocyte", "Neuron", "Neuro 
 names(new.cluster.ids) <- levels(mice_control)
 mice_control <- RenameIdents(mice_control, new.cluster.ids)
 DimPlot(mice_control, reduction = "umap", label = TRUE, pt.size = 0.5)
+################################
+# Test DEGs identified from Wang_et_al Yuzwa data
 
+# Microglia
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Microglia) + 
+  plot_annotation(title = "Microglia")
+
+# Astrocyte
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Astro_df) + 
+  plot_annotation(title = "Astrocyte_common")
+
+# OPC
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$OPC) + 
+  plot_annotation(title = "OPC")
+
+# Oligo
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Oligodendrocyte) + 
+  plot_annotation(title = "Oligodendrocyte")
+
+# Pre-Oligo
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$`Oligodendrocyte-Immature`) + 
+  plot_annotation(title = "Pre-oligo")
+
+# Vascular
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Vascular) + 
+  plot_annotation(title = "Vascular")
+
+# RG
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$RG_df) + 
+  plot_annotation(title = "RG-Common")
+
+# Unknown
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Unknown) + 
+  plot_annotation(title = "Unknown")
+
+# Tri_IPC
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$`IPC-Glia`) + 
+  plot_annotation(title = "Tri_IPC")
+
+# CR
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$`Cajal-Retzius cell`) + 
+  plot_annotation(title = "Cajal-Retzius cell")
+
+# EN
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$EN_df) + 
+  plot_annotation(title = "EN")
+
+# IN
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$IN_df) + 
+  plot_annotation(title = "IN")
 ################################
 # Save result seurat object
 saveRDS(mice_control, file = "data/processed/Yuzwa/mice_control/seuratObj_mice_control.RData")

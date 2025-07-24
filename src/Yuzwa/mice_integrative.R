@@ -88,6 +88,21 @@ DimPlot(mice_merged,
 mice_merged.markers <- FindAllMarkers(mice_merged, only.pos = TRUE)
 mice_merged.markers %>% group_by(cluster) %>% dplyr::filter(avg_log2FC > 1)
 
+mice_merged.markers.cluster <- split(mice_merged.markers, mice_merged.markers$cluster)
+
+filtered_deg_list <- lapply(mice_merged.markers.cluster, function(df) {
+  subset(df, 
+         pct.1 > 0.1 & 
+           pct.2 > 0.1 & 
+           p_val < 0.05 & 
+           (avg_log2FC > 0.25 | avg_log2FC < -0.25))
+})
+
+filtered_deg_list <- lapply(filtered_deg_list, function(df) {
+  df$p_FC <- (1 - df$p_val) * df$avg_log2FC
+  return(df)
+})
+
 # test known marker gene
 # Astrocyte marker
 FeaturePlot(mice_merged, 
@@ -111,7 +126,7 @@ FeaturePlot(mice_merged,
             reduction = "umap")
 
 # Oligo progenitor marker
-FeaturePlot(mice_merged, 
+FeaturePlot(mice_control, 
             features = c("Cspg4", "Pdgfra"), 
             reduction = "umap")
 
@@ -254,7 +269,72 @@ Selected_DEGs <- data.frame(
   stringsAsFactors = FALSE
 )
 ggtexttable(Selected_DEGs, rows = NULL, theme = ttheme("light"))
+
 ################################
+mice_control <- subset(mice_merged, subset = orig.ident == "mice_control")
+# Test DEGs identified from Wang_et_al Yuzwa data
+
+# Microglia
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Microglia, 
+            reduction = "umap") + 
+  plot_annotation(title = "Microglia")
+
+# Astrocyte
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Astro_df, 
+            reduction = "umap") + 
+  plot_annotation(title = "Astrocyte_common")
+
+# OPC
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$OPC, 
+            reduction = "umap") + 
+  plot_annotation(title = "OPC")
+
+# Oligo
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Oligodendrocyte, 
+            reduction = "umap") + 
+  plot_annotation(title = "Oligodendrocyte")
+
+# Pre-Oligo
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$`Oligodendrocyte-Immature`, 
+            reduction = "umap") + 
+  plot_annotation(title = "Pre-oligo")
+
+# Vascular
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Vascular, 
+            reduction = "umap") + 
+  plot_annotation(title = "Vascular")
+
+# RG
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$RG_df, 
+            reduction = "umap") + 
+  plot_annotation(title = "RG-Common")
+
+# Unknown
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$Unknown, 
+            reduction = "umap") + 
+  plot_annotation(title = "Unknown")
+
+# Tri_IPC
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$`IPC-Glia`, 
+            reduction = "umap") + 
+  plot_annotation(title = "Tri_IPC")
+
+# CR
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$`Cajal-Retzius cell`, 
+            reduction = "umap") + 
+  plot_annotation(title = "Cajal-Retzius cell")
+
+# EN
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$EN_df, 
+            reduction = "umap") + 
+  plot_annotation(title = "EN")
+
+# IN
+FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$IN_df, 
+            reduction = "umap") + 
+  plot_annotation(title = "IN")
+################################
+
 # Export mice_merged seurat obj into CSV file
 data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
 fwrite(x = data_to_write_out, row.names = TRUE, file = "mice_merged.csv")
