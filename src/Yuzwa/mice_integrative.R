@@ -15,6 +15,7 @@ library(clustifyrdatahub)
 library(SingleR)
 library(celldex)
 library(ggpubr)
+library(VennDiagram)
 
 #######################
 # include Helper function
@@ -334,7 +335,330 @@ FeaturePlot(mice_control, features = Wang_et_al_Marker$sup_table3b$IN_df,
             reduction = "umap") + 
   plot_annotation(title = "IN")
 ################################
+# Assay common DEGs with Wakui_et_al data
+Yuzwa_DEGs_result <- DEGs_result
+# Subset DEGs for QC
+Yuzwa_DEGs_result_subset <- subset_DEGs(Yuzwa_DEGs_result, 
+                                        "pct.1 > 0.1 & 
+                                   pct.2 > 0.1 & 
+                                   p_val < 0.05 & 
+                                   (avg_log2FC > 0.25 | avg_log2FC < -0.25)")
+# Split UP & down regulation
+Yuzwa_DEGs_result_subset_Up <- subset_DEGs(Yuzwa_DEGs_result_subset, 
+                                     "avg_log2FC < 0")
+Yuzwa_DEGs_result_subset_Down <- subset_DEGs(Yuzwa_DEGs_result_subset, 
+                                       "avg_log2FC > 0")
 
+# Merge all upregulated Microglia cluster's DEGs
+Yuzwa_DEGs_result_subset_Up[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$DEG_result_cluster0$mice_treatment, 
+                                                            Yuzwa_DEGs_result_subset_Up$DEG_result_cluster1$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Up[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Up$DEG_result_cluster2$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Up[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Up$DEG_result_cluster5$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Up[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Up$DEG_result_cluster7$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Up[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Up$DEG_result_cluster10$mice_treatment, 
+                                                            keep_non_common = T)
+
+# Merge all upregulated Astro cluster's DEGs
+Yuzwa_DEGs_result_subset_Up[["Astro"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$DEG_result_cluster9$mice_treatment, 
+                                                            Yuzwa_DEGs_result_subset_Up$DEG_result_cluster11$mice_treatment, 
+                                                            keep_non_common = T)
+
+# Merge all Downregulated Microglia cluster's DEGs
+Yuzwa_DEGs_result_subset_Down[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$DEG_result_cluster0$mice_treatment, 
+                                                            Yuzwa_DEGs_result_subset_Down$DEG_result_cluster1$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Down[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Down$DEG_result_cluster2$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Down[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Down$DEG_result_cluster5$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Down[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Down$DEG_result_cluster7$mice_treatment, 
+                                                            keep_non_common = T)
+Yuzwa_DEGs_result_subset_Down[["Microglia"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$Microglia, 
+                                                            Yuzwa_DEGs_result_subset_Down$DEG_result_cluster10$mice_treatment, 
+                                                            keep_non_common = T)
+
+# Merge all Downregulated Astro cluster's DEGs
+Yuzwa_DEGs_result_subset_Down[["Astro"]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$DEG_result_cluster9$mice_treatment, 
+                                                        Yuzwa_DEGs_result_subset_Down$DEG_result_cluster11$mice_treatment, 
+                                                        keep_non_common = T)
+
+Wakui_DEGs_result <- readRDS(file = "data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs/Wakui_DEGs_result.RData")
+# Subset DEGs for QC
+Wakui_DEGs_result_subset <- subset_DEGs(Wakui_DEGs_result, 
+                                        "pct.1 > 0.1 & 
+                                   pct.2 > 0.1 & 
+                                   p_val < 0.05 & 
+                                   (avg_log2FC > 0.25 | avg_log2FC < -0.25)")
+# Split UP & down regulation
+Wakui_DEGs_result_subset_Up <- subset_DEGs(Wakui_DEGs_result_subset, 
+                                           "avg_log2FC < 0")
+Wakui_DEGs_result_subset_Down <- subset_DEGs(Wakui_DEGs_result_subset, 
+                                             "avg_log2FC > 0")
+
+for (group in c("CI", "HIE", "Hypoxia")) {
+  # Merge all upregulated Microglia cluster's DEGs
+  Wakui_DEGs_result_subset_Down[["Microglia"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down$DEG_result_cluster0[[group]], 
+                                                          Wakui_DEGs_result_subset_Down$DEG_result_cluster28[[group]], 
+                                                          keep_non_common = T)
+  
+  # Merge all upregulated Astro cluster's DEGs
+  Wakui_DEGs_result_subset_Down[["Astro"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down$DEG_result_cluster17[[group]], 
+                                                                       Wakui_DEGs_result_subset_Down$DEG_result_cluster21[[group]], 
+                                                                       keep_non_common = T)
+  
+  # Merge all upregulated Oligo cluster's DEGs
+  Wakui_DEGs_result_subset_Down[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down$DEG_result_cluster16[[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster27[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Oligo"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster24[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Oligo"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster22[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Oligo"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster3[[group]], 
+                                                                   keep_non_common = T)
+  
+  # Merge all upregulated Neuron cluster's DEGs
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down$DEG_result_cluster7[[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster10[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster26[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster15[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Down$DEG_result_cluster2[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster13[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster6[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster20[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster4[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster18[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster8[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster5[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster29[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster30[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster12[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster9[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster14[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster1[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster19[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Down[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Down[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Down$DEG_result_cluster11[[group]], 
+                                                                    keep_non_common = T)
+  
+  # Merge all upregulated Microglia cluster's DEGs
+  Wakui_DEGs_result_subset_Up[["Microglia"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up$DEG_result_cluster0[[group]], 
+                                                                       Wakui_DEGs_result_subset_Up$DEG_result_cluster28[[group]], 
+                                                                       keep_non_common = T)
+  
+  # Merge all upregulated Astro cluster's DEGs
+  Wakui_DEGs_result_subset_Up[["Astro"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up$DEG_result_cluster17[[group]], 
+                                                                   Wakui_DEGs_result_subset_Up$DEG_result_cluster21[[group]], 
+                                                                   keep_non_common = T)
+  
+  # Merge all upregulated Oligo cluster's DEGs
+  Wakui_DEGs_result_subset_Up[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up$DEG_result_cluster16[[group]], 
+                                                                   Wakui_DEGs_result_subset_Up$DEG_result_cluster27[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Oligo"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Up$DEG_result_cluster24[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Oligo"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Up$DEG_result_cluster22[[group]], 
+                                                                   keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Oligo"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Oligo"]][[group]], 
+                                                                   Wakui_DEGs_result_subset_Up$DEG_result_cluster3[[group]], 
+                                                                   keep_non_common = T)
+  
+  # Merge all upregulated Neuron cluster's DEGs
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up$DEG_result_cluster7[[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster10[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster26[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster15[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster2[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster13[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster6[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster20[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster4[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster18[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster8[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster5[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster29[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster30[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster12[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster9[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster14[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster1[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster19[[group]], 
+                                                                    keep_non_common = T)
+  Wakui_DEGs_result_subset_Up[["Neuron"]][[group]] <- merge_DEG_dfs(Wakui_DEGs_result_subset_Up[["Neuron"]][[group]], 
+                                                                    Wakui_DEGs_result_subset_Up$DEG_result_cluster11[[group]], 
+                                                                    keep_non_common = T) 
+}
+
+common_DEGs_Up <- list()
+for (group in c("CI", "HIE", "Hypoxia")) {
+  common_DEGs_Up[["Microglia"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$Microglia, 
+                                                          Wakui_DEGs_result_subset_Up$Microglia[[group]])
+  common_DEGs_Up[["Astro"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$Astro, 
+                                                          Wakui_DEGs_result_subset_Up$Astro[[group]])
+  common_DEGs_Up[["Oligo"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$DEG_result_cluster8$mice_treatment, 
+                                                      Wakui_DEGs_result_subset_Up$Oligo[[group]])
+  common_DEGs_Up[["Neuro"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Up$DEG_result_cluster4$mice_treatment, 
+                                                      Wakui_DEGs_result_subset_Up$Neuron[[group]])
+}
+common_DEGs_Up[["Microglia_merged"]] <- merge_DEG_dfs(common_DEGs_Up$Microglia$CI, common_DEGs_Up$Microglia$HIE)
+common_DEGs_Up[["Microglia_merged"]] <- merge_DEG_dfs(common_DEGs_Up[["Microglia_merged"]], common_DEGs_Up$Microglia$Hypoxia)
+
+common_DEGs_Up[["Astro_merged"]] <- merge_DEG_dfs(common_DEGs_Up$Astro$CI, common_DEGs_Up$Astro$HIE)
+common_DEGs_Up[["Astro_merged"]] <- merge_DEG_dfs(common_DEGs_Up[["Astro_merged"]], common_DEGs_Up$Astro$Hypoxia)
+
+common_DEGs_Up[["oligo_merged"]] <- merge_DEG_dfs(common_DEGs_Up$Oligo$CI, common_DEGs_Up$Oligo$HIE)
+common_DEGs_Up[["oligo_merged"]] <- merge_DEG_dfs(common_DEGs_Up[["oligo_merged"]], common_DEGs_Up$Oligo$Hypoxia)
+
+common_DEGs_Up[["Neuro_merged"]] <- merge_DEG_dfs(common_DEGs_Up$Neuro$CI, common_DEGs_Up$Neuro$HIE)
+common_DEGs_Up[["Neuro_merged"]] <- merge_DEG_dfs(common_DEGs_Up[["Neuro_merged"]], common_DEGs_Up$Neuro$Hypoxia)
+
+common_DEGs_Down <- list()
+for (group in c("CI", "HIE", "Hypoxia")) {
+  common_DEGs_Down[["Microglia"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$Microglia, 
+                                                          Wakui_DEGs_result_subset_Down$Microglia[[group]])
+  common_DEGs_Down[["Astro"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$Astro, 
+                                                      Wakui_DEGs_result_subset_Down$Astro[[group]])
+  common_DEGs_Down[["Oligo"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$DEG_result_cluster8$mice_treatment, 
+                                                      Wakui_DEGs_result_subset_Down$Oligo[[group]])
+  common_DEGs_Down[["Neuro"]][[group]] <- merge_DEG_dfs(Yuzwa_DEGs_result_subset_Down$DEG_result_cluster4$mice_treatment, 
+                                                      Wakui_DEGs_result_subset_Down$Neuron[[group]])
+}
+common_DEGs_Down[["Microglia_merged"]] <- merge_DEG_dfs(common_DEGs_Down$Microglia$CI, common_DEGs_Down$Microglia$HIE)
+common_DEGs_Down[["Microglia_merged"]] <- merge_DEG_dfs(common_DEGs_Down[["Microglia_merged"]], common_DEGs_Down$Microglia$Hypoxia)
+
+common_DEGs_Down[["Astro_merged"]] <- merge_DEG_dfs(common_DEGs_Down$Astro$CI, common_DEGs_Down$Astro$HIE)
+common_DEGs_Down[["Astro_merged"]] <- merge_DEG_dfs(common_DEGs_Down[["Astro_merged"]], common_DEGs_Down$Astro$Hypoxia)
+
+common_DEGs_Down[["oligo_merged"]] <- merge_DEG_dfs(common_DEGs_Down$Oligo$CI, common_DEGs_Down$Oligo$HIE)
+common_DEGs_Down[["oligo_merged"]] <- merge_DEG_dfs(common_DEGs_Down[["oligo_merged"]], common_DEGs_Down$Oligo$Hypoxia)
+
+common_DEGs_Down[["Neuro_merged"]] <- merge_DEG_dfs(common_DEGs_Down$Neuro$CI, common_DEGs_Down$Neuro$HIE)
+common_DEGs_Down[["Neuro_merged"]] <- merge_DEG_dfs(common_DEGs_Down[["Neuro_merged"]], common_DEGs_Down$Neuro$Hypoxia)
+#################
+# extract top 5 up & down regulated DEGs based on p_FC value
+Selected_DEGs_Up <- list()
+for (i in c("Microglia", "Astro", "Oligo", "Neuro")) {
+  Selected_DEGs_Up[[i]] <- list()
+  Selected_DEGs_Up[[i]][["Hypoxia"]] <- head(row.names(common_DEGs_Up[[i]][["Hypoxia"]]
+                                                       [order(common_DEGs_Up[[i]][["Hypoxia"]][["p_FC"]], 
+                                                              decreasing = F), ]), 5)
+}
+
+Selected_DEGs_Down <- list()
+for (i in c("Microglia", "Astro", "Oligo", "Neuro")) {
+  Selected_DEGs_Down[[i]] <- list()
+  Selected_DEGs_Down[[i]][["Hypoxia"]] <- head(row.names(common_DEGs_Down[[i]][["Hypoxia"]]
+                                                       [order(common_DEGs_Down[[i]][["Hypoxia"]][["p_FC"]], 
+                                                              decreasing = T), ]), 5)
+}
+#############
+# Plot spreadsheet of top 5 Upregulated DEGs
+Selected_DEGs_Up <- as.data.frame(do.call(rbind, Selected_DEGs_Up))
+Selected_DEGs_Up <- data.frame(
+  Celltype = sub("^", "", rownames(Selected_DEGs_Up)),
+  Hypoxia = sapply(Selected_DEGs_Up$Hypoxia, function(x) paste(x, collapse = ", ")), 
+  stringsAsFactors = FALSE
+)
+ggtexttable(Selected_DEGs_Up, rows = NULL, theme = ttheme("light"))
+
+# Plot spreadsheet of top 5 Downregulated DEGs
+Selected_DEGs_Down <- as.data.frame(do.call(rbind, Selected_DEGs_Down))
+Selected_DEGs_Down <- data.frame(
+  Cluster = sub("^", "", rownames(Selected_DEGs_Down)),
+  Hypoxia = sapply(Selected_DEGs_Down$Hypoxia, function(x) paste(x, collapse = ", ")),
+  stringsAsFactors = FALSE
+)
+ggtexttable(Selected_DEGs_Down, rows = NULL, theme = ttheme("light"))
+
+# Save RDS
+saveRDS(common_DEGs_Up, file = "data/processed/Yuzwa/mice_integrated/DEGs/Common_DEGs_Wakui/common_DEGs_Up.RData")
+saveRDS(common_DEGs_Down, file = "data/processed/Yuzwa/mice_integrated/DEGs/Common_DEGs_Wakui/common_DEGs_Down.RData")
+################################
 # Export mice_merged seurat obj into CSV file
 data_to_write_out <- as.data.frame(as.matrix(mice_merged[["RNA"]]$data))
 fwrite(x = data_to_write_out, row.names = TRUE, file = "mice_merged.csv")

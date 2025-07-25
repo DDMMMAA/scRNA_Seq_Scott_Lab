@@ -227,7 +227,7 @@ DotPlot(Wakui_merged, features = markers.to.plot, cols = c("blue", "red", "yello
 # Identify DEG across conditions
 DEGs_result <- DEGs_across_condition(Wakui_merged, "Sham")
 
-# Subset DEGs that have either pct.1 or pct.2 > 0.1, meant to accommodate low dataset quality
+# Subset DEGs for QC, meant to accommodate low dataset quality
 DEGs_result_subset <- subset_DEGs(DEGs_result, 
                                    "pct.1 > 0.1 & 
                                    pct.2 > 0.1 & 

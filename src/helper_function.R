@@ -243,3 +243,55 @@ DEGs_enrichGO <- function(obj, export_figure = F, dir, width = 1280, height = 72
     return(GO_result_cluster)
   }
 }
+
+#######################################
+# Wrapper to merge two DEG data.frames by gene (row name), averaging all numeric columns
+# Return a merged data.frame with gene names as rownames and averaged columns
+# Argument:
+#   df1: first DEG data.frame (row names = gene symbols; all columns numeric)
+#   df2: second DEG data.frame (same structure as df1)
+#   keep_non_common: whether to keep genes that are not shared (TRUE/FALSE)
+merge_DEG_dfs <- function(df1, df2, keep_non_common = FALSE) {
+  # Error handling
+  if (!is.data.frame(df1) || !is.data.frame(df2)) {
+    message("# Argument:")
+    message("#   df1: first DEG data.frame (row names = gene symbols; all columns numeric)")
+    message("#   df2: second DEG data.frame (same structure as df1)")
+    message("#   keep_non_common: whether to keep genes that are not shared (TRUE/FALSE)")
+    stop("Both df1 and df2 must be data.frames.")
+  }
+  
+  if (!identical(colnames(df1), colnames(df2))) {
+    stop("The two data.frames do not have the same column names.")
+  }
+  
+  # Ensure all values are numeric
+  df1[] <- lapply(df1, function(x) as.numeric(as.character(x)))
+  df2[] <- lapply(df2, function(x) as.numeric(as.character(x)))
+  
+  # Identify genes
+  genes_df1 <- rownames(df1)
+  genes_df2 <- rownames(df2)
+  common_genes <- intersect(genes_df1, genes_df2)
+  
+  # Merge common genes
+  df1_common <- df1[common_genes, , drop = FALSE]
+  df2_common <- df2[common_genes, , drop = FALSE]
+  merged_common <- (df1_common + df2_common) / 2
+  rownames(merged_common) <- common_genes
+  
+  # Handle non-common genes
+  if (keep_non_common) {
+    unique_df1 <- df1[setdiff(genes_df1, common_genes), , drop = FALSE]
+    unique_df2 <- df2[setdiff(genes_df2, common_genes), , drop = FALSE]
+    merged_result <- rbind(merged_common, unique_df1, unique_df2)
+  } else {
+    merged_result <- merged_common
+  }
+  
+  message("Merged ", length(common_genes), " shared genes.",
+          if (keep_non_common) paste0(" Included ", 
+                                      nrow(merged_result) - length(common_genes), 
+                                      " non-common genes."))
+  return(merged_result)
+}
