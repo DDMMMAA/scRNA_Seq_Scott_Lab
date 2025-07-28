@@ -77,7 +77,48 @@
     5. Cluster proportion difference is less significant than expected (Cluster proportion)
     6. Microglia transaction from physiological to pathobiological response is observed from Hypoxia to HIE treatment (GO)
 
-   
+7. Test the reciprocal mapping of DEGs identified in major population of Yuzwa & Wang_et_al's dataset.\
+   And common DEGs identified in major population of Yuzwa & Waikui_et_al dataset (2025/7/28).
+   - Example of Reciprocal mapping
+     - Yuzwa -> Wang_et_al\
+       Microglia (KLF4):\
+       ![KLF4](data/processed/Wang_et_al/DEGs_overlap_Yuzwa/Cluster0/KLF4.png)\
+       Neuron (TENM2):\
+       ![TENM2](data/processed/Wang_et_al/DEGs_overlap_Yuzwa/Cluster3/TENM2.png)\
+       Oligo/OPC (MBP):\
+       ![MBP](data/processed/Wang_et_al/DEGs_overlap_Yuzwa/Cluster8/MBP.png)\
+       Astro (SLC1A3):\
+       ![SLC1A3](data/processed/Wang_et_al/DEGs_overlap_Yuzwa/Cluster9/SLC1A3.png)
+     - Wang_et_al -> Yuzwa\
+       Microglia:\
+       ![Microglia](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/Microglia.png)\
+       Astro:\
+       ![Astro](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/Astro.png)\
+       Oligo:\
+       ![Oligo](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/Oligo.png)\
+       OPC:\
+       ![OPC](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/OPC.png)\
+       EN:\
+       ![EN](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/EN.png)\
+       IN:\
+       ![IN](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/IN.png)\
+       RG:\
+       ![RG](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/RG.png)\
+       Tri_IPC:\
+       ![Microglia](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/Tri_IPC.png)\
+       Vascular:\
+       ![Microglia](data/processed/Yuzwa/mice_integrated/Control_DEGs_overlap_Wang/sup_table_marker/Vascular.png)
+   - Common UP/Down regulated gene in Yuzwa & Wakui_et_al dataset
+     - UP:\
+       ![Up](data/processed/Yuzwa/mice_integrated/DEGs/Common_DEGs_Wakui/Up.png)
+     - Down:\
+       ![Down](data/processed/Yuzwa/mice_integrated/DEGs/Common_DEGs_Wakui/Down.png)
+   - Conclusion for cross comparison between three dataset:
+    1. Yuzwa's dataset's major population is well mapped to Wang_et_al dataset except microglia population.
+    2. Yuzwa's dataset Microglia cluster #5 and #7 mapped to RG population in Wang_et_al dataset.
+    3. Yuzwa's dataset's small population failed to map to Wang_et_al dataset (ubiquitously/absence).
+    4. Wang_et_al's vascular, Tri_IPC, and RG is likely to be absent in Yuzwa's dataset.
+    5. There are more common Down regulated gene than Upregulated gene between Yuzwa and Wakui_et_al dataset.
    
    
    
