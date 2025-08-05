@@ -245,8 +245,10 @@ DEGs_result_subset_Up <- subset_DEGs(DEGs_result_subset,
 DEGs_result_subset_Down <- subset_DEGs(DEGs_result_subset, 
                                        "avg_log2FC > 0")
 
-DEGs_GO_Up <- DEGs_enrichGO(DEGs_result_subset_Up, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_UpGO')
-DEGs_GO_Down <- DEGs_enrichGO(DEGs_result_subset_Down, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_DownGO')
+# The iterative GO commented below runs for ages (~2 hour) on my machine
+# Make sure you are prepared for waiting
+# DEGs_GO_Up <- DEGs_enrichGO(DEGs_result_subset_Up, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_UpGO')
+# DEGs_GO_Down <- DEGs_enrichGO(DEGs_result_subset_Down, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_DownGO')
 
 plots <- VlnPlot(mice_merged, features = genes.to.label, 
                  split.by = "orig.ident", group.by = "seurat_clusters",
@@ -298,6 +300,7 @@ Selected_DEGs <- data.frame(
 ggtexttable(Selected_DEGs, rows = NULL, theme = ttheme("light"))
 
 ################################
+# Only subset the control group for comparesion with wang_et_al
 mice_control <- subset(mice_merged, subset = orig.ident == "mice_control")
 # Test DEGs identified from Wang_et_al Yuzwa data
 
