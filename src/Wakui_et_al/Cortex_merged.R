@@ -18,6 +18,7 @@ library(ggpubr)
 library(bit64)
 library(enrichplot)
 library("org.Mm.eg.db")
+library(readxl)
 
 #######################
 # include Helper function
@@ -163,10 +164,10 @@ new.cluster.ids <- c("Microglia_1", "Neuron_1", "Cardiac muscle*", "OPC",
                      "Neuron_16", "Neuron_17")
 names(new.cluster.ids) <- levels(Wakui_merged)
 Wakui_merged <- RenameIdents(Wakui_merged, new.cluster.ids)
-DimPlot(Wakui_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+DimPlot(Wakui_merged, reduction = "umap", label = T, pt.size = 0.5) + NoLegend() + ggtitle("Manual")
 
 # Automated Cell annotation by clustifyr
-# using clustering result at res = 0.5 and Mouse Cell Atlas as reference
+# using clustering result at res = 1 and Mouse Cell Atlas as reference
 x <- cor_to_call(clustify(
   input = Wakui_merged,
   metadata = Wakui_merged@meta.data$RNA_snn_res.1,
@@ -191,7 +192,7 @@ new.cluster.ids <- c("Macrophage_1", "Dopaminergic neuron_1", "Granule neurons_1
                      "Neural progenitor cell_2", "Granule neurons_7")
 names(new.cluster.ids) <- levels(Wakui_merged)
 Wakui_merged <- RenameIdents(Wakui_merged, new.cluster.ids)
-DimPlot(Wakui_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+DimPlot(Wakui_merged, reduction = "umap", label = T, pt.size = 0.5) + NoLegend() + ggtitle("Clustifyr")
 
 # Automated Cell annotation by SingleR
 ref_mice <- fetchReference("mouse_rnaseq", "2024-02-26")
@@ -199,18 +200,39 @@ SingleR_result <- SingleR(as.data.frame(as.matrix(Wakui_merged[["RNA"]]$data)),
                           ref_mice, ref_mice$label.main)
 Wakui_merged$SingleR.labels <- SingleR_result$labels
 DimPlot(Wakui_merged, reduction = "umap", label = TRUE, pt.size = 0.5, 
-        group.by = "SingleR.labels", repel = T)
+        group.by = "SingleR.labels", repel = T)+ NoLegend()
+
+# Final Annotation
+new.cluster.ids <- c("Microglia_1", "Neuron_1", "Neuron_1", "OPC", 
+                     "Neuron_2", "Neuron_3", "Neuron_4", "Neuron_5", 
+                     "Neuron_6", "Neuron_7", "Neuron_8", "Neuron_9", 
+                     "Neuron_10", "Neuron_11", "Neuron_12", "Neuron_13", 
+                     "Mature_oligo", "Astro_1", "Neuron_14", "Neuron_15", "Neuron_16", 
+                     "Astro_2", "Pre_oligo_1", "Pre_oligo_2", "Pre_oligo_3", 
+                     "Vascular", "Neuron_17", "Pre_oligo_4", "Microglia_2", 
+                     "Neuron_18", "Neuron_19")
+names(new.cluster.ids) <- levels(Wakui_merged)
+Wakui_merged <- RenameIdents(Wakui_merged, new.cluster.ids)
+DimPlot(Wakui_merged, reduction = "umap", label = T, pt.size = 0.5) + NoLegend() + ggtitle("Final")
 ################################
+Wakui_merged$RNA_snn_res.1 <- Wakui_merged@active.ident
 # plot cluster proportion
-pt <- table(Wakui_merged$seurat_clusters, Wakui_merged$orig.ident)
+pt <- table(Wakui_merged$RNA_snn_res.1, Wakui_merged$orig.ident)
 pt <- as.data.frame(pt)
 pt$Var1 <- as.character(pt$Var1)
 
-ggplot(pt, aes(x = Var2, y = Freq, fill = Var1)) +
+# merge all neuron cluster 
+pt_merged <- pt %>%
+  mutate(Var1 = ifelse(grepl("^Neuron_", Var1), "Neuron", Var1)) %>%
+  group_by(Var1, Var2) %>%
+  summarise(Freq = sum(Freq), .groups = "drop")
+
+ggplot(pt_merged, aes(x = Var2, y = Freq, fill = Var1)) +
   theme_bw(base_size = 15) +
   geom_col(position = "fill", width = 0.5) +
   xlab("Sample") +
-  ylab("Proportion")
+  ylab("Proportion") +
+  scale_fill_brewer(palette = "Set3")
 ################################
 # Identify conserved cell type marker across control & treatment group
 # This step meant to help manual annotation
@@ -227,12 +249,13 @@ DotPlot(Wakui_merged, features = markers.to.plot, cols = c("blue", "red", "yello
 # Identify DEG across conditions
 DEGs_result <- DEGs_across_condition(Wakui_merged, "Sham")
 
-# Subset DEGs for QC, meant to accommodate low dataset quality
+# Subset DEGs
 DEGs_result_subset <- subset_DEGs(DEGs_result, 
                                    "pct.1 > 0.1 & 
                                    pct.2 > 0.1 & 
                                    p_val < 0.05 & 
-                                   (avg_log2FC > 0.25 | avg_log2FC < -0.25)")
+                                   (avg_log2FC > 0.25 | 
+                                  avg_log2FC < -0.25)")
 
 DEGs_result_subset_Up <- subset_DEGs(DEGs_result_subset, 
                                      "avg_log2FC < 0")

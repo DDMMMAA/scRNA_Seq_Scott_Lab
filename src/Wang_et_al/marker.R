@@ -55,7 +55,7 @@ for (df2 in c("Astro_df", "RG_df", "EN_df", "IN_df")) {
     group_by(Gene) %>%
     summarise(across(where(is.numeric), mean, na.rm = TRUE), .groups = "drop") %>%
     mutate(duplicated = TRUE) %>%
-    select(duplicated, Gene, everything())
+    dplyr::select(duplicated, Gene, everything())
   merged_dup_df <- merged_dup_df[,-3]
   
   # Step 3: Retain non-duplicated rows

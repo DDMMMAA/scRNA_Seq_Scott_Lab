@@ -127,7 +127,7 @@ FeaturePlot(mice_merged,
             reduction = "umap")
 
 # Oligo progenitor marker
-FeaturePlot(mice_control, 
+FeaturePlot(mice_merged, 
             features = c("Cspg4", "Pdgfra"), 
             reduction = "umap")
 
@@ -152,7 +152,7 @@ new.cluster.ids <- c("Proliferating_Microglia*", "1", "Mitochondrial", "Neuron",
                      "13", "Blood-brain_barrier*", "Cell_movement*")
 names(new.cluster.ids) <- levels(mice_merged)
 mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
-DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+DimPlot(mice_merged, reduction = "umap", label = T, pt.size = 0.5) + NoLegend() + ggtitle("Manual")
 
 # Automated Cell annotation by clustifyr
 # using clustering result at res = 0.5 and Mouse Cell Atlas as reference
@@ -163,19 +163,19 @@ cor_to_call(clustify(
 ))
 
 # Rename cluster based on result above
-new.cluster.ids <- c("Macrophage_Klf2_high_1", "Macrophage_Klf2_high_2", 
-                     "Macrophage_Klf2_high_3", "Schwann_cell_1", 
-                     "Granule_neurons", "Neuron_Kpna2_high", "Schwann_cell_2", 
+new.cluster.ids <- c("Macrophage_1", "Macrophage_2", 
+                     "Macrophage_3", "Schwann_1", 
+                     "Granule_neurons", "Neuron", "Schwann_2", 
                      "Proliferating_thymocyte", 
                      "Myelinating_oligodendrocyte", 
-                     "Astroglial_cell(Bergman glia)", 
-                     "Macrophage_Klf2_high_4", "Astrocyte_Mfe_high", 
-                     "Monocyte(Spleen)", 
-                     "Schwann_cell_3", "Ductal_cell(Pancreas)", 
-                     "Hypothalamic_ependymal cell")
+                     "Astroglial_cell", 
+                     "Macrophage_4", "Astrocyte", 
+                     "Monocyte", 
+                     "Schwann_3", "Ductal_cell", 
+                     "ependymal cell")
 names(new.cluster.ids) <- levels(mice_merged)
 mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
-DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5)
+DimPlot(mice_merged, reduction = "umap", label = T, pt.size = 0.5) + NoLegend() + ggtitle("Clustifyr")
 
 # Automated Cell annotation by SingleR
 ref_mice <- fetchReference("mouse_rnaseq", "2024-02-26")
@@ -183,11 +183,21 @@ SingleR_result <- SingleR(as.data.frame(as.matrix(mice_merged[["RNA"]]$data)),
                           ref_mice, ref_mice$label.main)
 mice_merged$SingleR.labels <- SingleR_result$labels
 DimPlot(mice_merged, reduction = "umap", label = TRUE, pt.size = 0.5, 
-        group.by = "SingleR.labels")
+        group.by = "SingleR.labels", repel = T) + NoLegend()
+
+# Final annotated umap
+new.cluster.ids <- c("Proliferating_Microglia", "Microglia_1", "Microglia_2", "Neuron", 
+                     "Neuro Stem", "Microglia_3","Myeloid", "Microglia_4", 
+                     "Oligo/OPC", "Asterocyte_1", "Mature_Microglia", "Astrocyte_2", 
+                     "T-cell", 
+                     "Epithelial", "BBB endothelial", "Ependymal")
+names(new.cluster.ids) <- levels(mice_merged)
+mice_merged <- RenameIdents(mice_merged, new.cluster.ids)
+DimPlot(mice_merged, reduction = "umap", label = T, pt.size = 0.5) + NoLegend() + ggtitle("Final")
 
 ################################
 # plot cluster proportion
-pt <- table(mice_merged$seurat_clusters, mice_merged$orig.ident)
+pt <- table(mice_merged@active.ident, mice_merged$orig.ident)
 pt <- as.data.frame(pt)
 pt$Var1 <- as.character(pt$Var1)
 
@@ -222,6 +232,22 @@ genes.to.label <- extract_top_DEGs(DEGs_result,
                                    col_name = "p_val", 
                                    decreasing = F, 
                                    "mice_treatment")
+
+# Subset significant DEGs
+DEGs_result_subset <- subset_DEGs(DEGs_result, 
+                                  "p_val < 0.05 & 
+                                   (avg_log2FC > 0.25 | 
+                                  avg_log2FC < -0.25)")
+
+DEGs_result_subset_Up <- subset_DEGs(DEGs_result_subset, 
+                                     "avg_log2FC < 0")
+
+DEGs_result_subset_Down <- subset_DEGs(DEGs_result_subset, 
+                                       "avg_log2FC > 0")
+
+DEGs_GO_Up <- DEGs_enrichGO(DEGs_result_subset_Up, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_UpGO')
+DEGs_GO_Down <- DEGs_enrichGO(DEGs_result_subset_Down, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_DownGO')
+
 plots <- VlnPlot(mice_merged, features = genes.to.label, 
                  split.by = "orig.ident", group.by = "seurat_clusters",
                  pt.size = 0.1, combine = FALSE)
