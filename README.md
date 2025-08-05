@@ -50,9 +50,9 @@
    - Identified Top 5 DEGs:\
     Threashold pct.1 > 0.1 & pct.2 > 0.1 & p_val < 0.05 & (avg_log2FC > 0.25 | avg_log2FC < -0.25), then rank by decreasing (Upregulate)/increasing (Downregulate) p_FC value.\
     Upregulate:\
-    ![Upregulate](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/DEGs_GO_Up/Top_5_Up.png)\
+    ![Upregulate](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/With_pct_subset/DEGs_GO_Up/Top_5_Up.png)\
     Downregulate:\
-    ![Downregulate](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/DEGs_GO_Down/Top_5_Down.png)
+    ![Downregulate](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/With_pct_subset/DEGs_GO_Down/Top_5_Down.png)
 
    - Check microglia DEGs identified from Yuzwa lab dataset:\
     Cp(Up), Msh5(Down).\
@@ -65,9 +65,9 @@
     Amoung all cluster's DEGs GO, only microglia GO difference is noticable.\
     A transaction from physiological to pathobiological response is observed from Hypoxia to HIE treatment.\
     Hypoxia:\
-    ![Hypoxia](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/DEGs_GO_Up/DEG_result_cluster0/Hypoxia.png)\
+    ![Hypoxia](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/With_pct_subset/DEGs_GO_Up/DEG_result_cluster0/Hypoxia.png)\
     HIE:\
-    ![HIE](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/DEGs_GO_Up/DEG_result_cluster0/HIE.png)
+    ![HIE](data/processed/Wakui_et_al/Cortex/Cortex_merged/DEGs_GO/With_pct_subset/DEGs_GO_Up/DEG_result_cluster0/HIE.png)
 
    - Conclusion of Wakui_et_al dataset:
     1. This dataset has relatively poor quality (~10% cell pass QC)
