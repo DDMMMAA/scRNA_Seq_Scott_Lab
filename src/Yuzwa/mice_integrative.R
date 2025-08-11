@@ -81,7 +81,6 @@ mice_merged <- FindClusters(mice_merged, resolution = 0.5)
 mice_merged <- RunUMAP(mice_merged, dims = 1:15, reduction = "integrated.cca")
 DimPlot(mice_merged, 
         reduction = "umap", 
-        split.by = "orig.ident", 
         label = TRUE)
 
 ###############################
@@ -131,12 +130,12 @@ FeaturePlot(mice_merged,
             features = c("Cspg4", "Pdgfra"), 
             reduction = "umap")
 
-# Micro glia marker
+# Microglia marker
 FeaturePlot(mice_merged, 
             features = c("Ptprc", "Cx3cr1", "Tmem9", "Aif1"), 
             reduction = "umap")
 
-# Epidermal marker
+# Ependymal marker
 FeaturePlot(mice_merged, 
             features = c("Foxj1"), 
             reduction = "umap")
