@@ -90,6 +90,7 @@ mice_merged.markers %>% group_by(cluster) %>% dplyr::filter(avg_log2FC > 1)
 
 mice_merged.markers.cluster <- split(mice_merged.markers, mice_merged.markers$cluster)
 
+# separate markers by cluster
 filtered_deg_list <- lapply(mice_merged.markers.cluster, function(df) {
   subset(df, 
          pct.1 > 0.1 & 
@@ -98,6 +99,7 @@ filtered_deg_list <- lapply(mice_merged.markers.cluster, function(df) {
            (avg_log2FC > 0.25 | avg_log2FC < -0.25))
 })
 
+# calculate p_FC
 filtered_deg_list <- lapply(filtered_deg_list, function(df) {
   df$p_FC <- (1 - df$p_val) * df$avg_log2FC
   return(df)
@@ -244,7 +246,7 @@ DEGs_result_subset_Up <- subset_DEGs(DEGs_result_subset,
 DEGs_result_subset_Down <- subset_DEGs(DEGs_result_subset, 
                                        "avg_log2FC > 0")
 
-# The iterative GO commented below runs for ages (~2 hour) on my machine
+# The iterative GO commented below runs for ages (~2 hours) on my machine
 # Make sure you are prepared for waiting
 # DEGs_GO_Up <- DEGs_enrichGO(DEGs_result_subset_Up, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_UpGO')
 # DEGs_GO_Down <- DEGs_enrichGO(DEGs_result_subset_Down, export_figure = T, dir = 'data/processed/Yuzwa/mice_integrated/DEGs/DEGs_DownGO')
@@ -289,6 +291,8 @@ Selected_DEGs <- list(Cluster0 = list(Up = c("Cp"),
                           cluster15 = list(Up = c("Cx3cr1", "Pla2g7", "Ccser1", "Gabrb1"), 
                                         Down = c("Sncaip", "Dhcr24", "Zfp950", "Cdip1", "Ndufa13"))
 )
+
+# plot selected DEGs as table
 Selected_DEGs <- as.data.frame(do.call(rbind, Selected_DEGs))
 Selected_DEGs <- data.frame(
   Cluster = rownames(Selected_DEGs),

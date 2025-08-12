@@ -92,7 +92,6 @@ DEGs_across_condition <- function(obj, control_name) {
       # cluster_name <- paste("Cluster", i, sep = "")
       result_name <- paste("DEG_result_cluster", i, sep = "")
       enrich_res <- list()
-      message(treatment_groups)
       for (treatment_group in treatment_groups) {
         enrich_res[[treatment_group]] <- FindMarkers(obj, 
                                   ident.1 = paste(i, control_name, sep = "_"), 
@@ -102,11 +101,9 @@ DEGs_across_condition <- function(obj, control_name) {
         # interpretation (at least I can't think about one), but an two variable 
         # function of p-value and avg_log2FC that generate a value to rank the 'significance'
         # of DEGs. The propose of this value is 
-        # 1: disregard the ambiguous p-value == 0.05 absolute threshold 
-        # (https://doi.org/10.1080/00031305.2016.1154108)
-        # 2: Reduce the subjective human bias of determine the
+        # 1: Reduce the subjective human bias of determine the
         # 'significance' of DEGs
-        # 3: Save time so that I don't need to worry p-value and avg_log2FC
+        # 2: Save time so that I don't need to worry p-value and avg_log2FC
         # respectively
         enrich_res[[treatment_group]]$p_FC <- ((1 - enrich_res[[treatment_group]]$p_val) * 
                                                  (enrich_res[[treatment_group]]$avg_log2FC))
