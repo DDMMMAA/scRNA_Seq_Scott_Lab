@@ -2,6 +2,7 @@ library(dplyr)
 library(Seurat)
 library(patchwork)
 library(clusterProfiler)
+library(clustree)
 
 #####################################
 # include Helper function
@@ -10,7 +11,7 @@ source("src/helper_function.R")
 # include DEGs/marker utilized in Wang_et_al
 source("src/Wang_et_al/marker.R")
 #####################################
-#Global Variable
+# raw data directory
 target_sample_directory <- "data/raw/Yuzwa/Control-10K_RSEC_MolsPerCell_MEX 1/"
 
 #####################################
@@ -104,16 +105,13 @@ mice_control.markers <- FindAllMarkers(mice_control, only.pos = TRUE)
 # filter all marker with avg_log2FC > 1
 mice_control.markers %>% group_by(cluster) %>% dplyr::filter(avg_log2FC > 1)
 
-# Sta test
-cluster0.markers <- FindMarkers(mice_control, ident.1 = 0, 
-                                logfc.threshold = 0.25, 
-                                test.use = "roc", only.pos = TRUE)
-
 # Visualization
 VlnPlot(mice_control, features = c("Enpp2", "Igfbp2"))
 
+# separate markers by cluster
 mice_control.markers.cluster <- split(mice_control.markers, mice_control.markers$cluster)
 
+# subsetting
 filtered_deg_list <- lapply(mice_control.markers.cluster, function(df) {
   subset(df, 
          pct.1 > 0.1 & 
@@ -122,6 +120,7 @@ filtered_deg_list <- lapply(mice_control.markers.cluster, function(df) {
            (avg_log2FC > 0.25 | avg_log2FC < -0.25))
 })
 
+# calculate p_FC value
 filtered_deg_list <- lapply(filtered_deg_list, function(df) {
   df$p_FC <- (1 - df$p_val) * df$avg_log2FC
   return(df)

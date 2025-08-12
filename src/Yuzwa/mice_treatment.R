@@ -9,7 +9,7 @@ library(clustree)
 source("src/helper_function.R")
 
 #####################################
-#Global Variable
+# raw data directory
 target_sample_directory <- "data/raw/Yuzwa/Injury-10K_RSEC_MolsPerCell_MEX 1/"
 
 #####################################
@@ -99,10 +99,6 @@ mice_treatment.markers <- FindAllMarkers(mice_treatment, only.pos = TRUE)
 
 # filter all marker with avg_log2FC > 1
 mice_treatment.markers %>% group_by(cluster) %>% dplyr::filter(avg_log2FC > 1)
-
-# Sta test
-cluster0.markers <- FindMarkers(mice_treatment, ident.1 = 0, logfc.threshold = 0.25, 
-                                test.use = "roc", only.pos = TRUE)
 
 # Visualization
 VlnPlot(mice_treatment, features = c("Enpp2", "Igfbp2"))
