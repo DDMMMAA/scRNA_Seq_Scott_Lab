@@ -37,9 +37,6 @@ Align_barcode_group <- function(obj, dir, exp_repeat) {
     barcode <- merge(barcode, Hypoxia_barcode, all = T)
     barcode <- merge(barcode, Sham_barcode, all = T)
     
-    message(length(rownames(Wakui_cortex1@meta.data)) == length(barcode$V1))
-    message(any(rownames(obj@meta.data) != barcode$V1))
-    
     obj[[]]$orig.ident <- barcode$group
     return(obj)
   }
